@@ -43,7 +43,7 @@
             "title": "AIDA",
             "href": "http://cds.cern.ch/collection/AIDA"
         },
-        "body": "<h3><a href=\"http://cds.cern.ch/collection/AIDA\"><img src=\"http://cds.cern.ch/img/AIDA_logo_mini.png\" alt=\"AIDA\"></a></h3><h4>Latest additions</h4><ul><li><a href=\"#\">2nd Periodic Report Public version</a></li><li><a href=\"#\">Recent results of the ATLAS Upgrade Planar Pixel Sensors R&amp;D Project</a></li><li><a href=\"#\">RADIATION MONITORING AT GIF++</a></li></ul>",
+      "body": "<h3><a href=\"http://cds.cern.ch/collection/AIDA\"><img src=\"http://cds.cern.ch/img/AIDA_logo_mini.png\" alt=\"AIDA\"></a></h3><h4>Latest additions</h4><ul><li><a href=\"#\">2nd Periodic Report Public version</a></li><li><a href=\"#\">Recent results of the ATLAS Upgrade Planar Pixel Sensors R&amp;D Project</a></li><li><a href=\"#\">RADIATION MONITORING AT GIF++</a></li></ul>",
         "footer": {
             "label": "more from AIDA"
         }

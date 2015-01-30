@@ -62,15 +62,26 @@ define("js/app",
     function bootstrapBoxes() {
         collection.reset()
         // for some reason json! fails here
+        // require("text!./prototype/data.json")
         //require("json!./prototype/data.json").forEach(function(box, i) {
-        JSON.parse(require("text!./prototype/data.json")).forEach(function(box, i) {
-            box.position = i
-            box.id = "b" + i
-            box.data.id = "b" + i
-            var b = new Box(box)
-            collection.add(b)
-            b.save()
-        })
+        $.get('/test', function(data){
+          $.each(data.items, function(i, box){
+              box.position = i
+              box.id = "b" + i
+              box.data.id = "b" + i
+              var b = new Box(box)
+              collection.add(b)
+              b.save()
+          });
+          //JSON.parse(data.items).forEach(function(box, i) {
+              //box.position = i
+              //box.id = "b" + i
+              //box.data.id = "b" + i
+              //var b = new Box(box)
+              //collection.add(b)
+              //b.save()
+          //})
+        });
     }
 
     function bootstrapPreferences() {
