@@ -42,7 +42,7 @@ from invenio.base.config import PACKAGES as _PACKAGES
 PACKAGES = [
     "cds.base",
     "cds.demosite",
-    "cds.modules.*",
+    "cds.modules.personal_collection",
 ] + _PACKAGES
 
 PACKAGES_EXCLUDE = [
