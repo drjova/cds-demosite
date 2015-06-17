@@ -27,7 +27,7 @@
             comments: false
         },
         compress: {
-            drop_console: true
+            drop_console: false
         },
         warnings: true,
         mangle: false
@@ -68,14 +68,13 @@
         "select2": "vendor/select2/select2.min",
         "ckeditor-core": "vendors/ckeditor/ckeditor",
         "ckeditor-jquery": "vendors/ckeditor/adapters/jquery",
-        // CDS
-        react: 'vendors/jsx-requirejs-plugin/js/react-with-addons',
-        jsx: 'vendors/jsx-requirejs-plugin/js/jsx',
-        JSXTransformer: 'vendors/jsx-requirejs-plugin/js/JSXTransformer',
-        json: 'vendors/requirejs-plugins/src/json',
-        backbone: 'vendors/backbone/backbone',
-        'backbone.localStorage': 'vendors/backbone.localstorage/backbone.localStorage',
-        underscore: 'vendors/underscore/underscore',
+        // Personal collections
+        "depot": "vendors/depot/depot",
+        "lodash": "vendors/lodash/lodash",
+        "sortable": "vendors/sortable.js/sortable",
+        "async": "vendors/async/lib/async",
+        "json": 'vendors/requirejs-plugins/src/json',
+        "hoganjs": "vendors/hogan/web/builds/3.0.2/hogan-3.0.2.amd",
     },
     shim: {
         // Invenio
@@ -182,17 +181,7 @@
           deps: ["jquery", "ckeditor-core"]
         },
         // CDS
-        react: { exports: 'React' },
-        'jquery.form': { deps: ['jquery'] },
-        backbone: { deps: ['underscore', 'jquery'], exports: 'Backbone'},
-        'backbone.localstorage': { deps: ['backbone'], exports: 'Backbone.LocalStorage' },
-        underscore: { exports: '_' }
-    },
-    onBuildWrite: function (moduleName, path, singleContents) {
-        // Dropping jsx related files
-        if (['jsx', 'JSXTransformer'].indexOf(moduleName) >= 0) {
-            return '';
-        }
-        return singleContents.replace(/jsx!/g, '');
+        lodash: { exports: '_' },
+        async: { exports: 'async' }
     }
 })

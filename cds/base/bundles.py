@@ -28,22 +28,21 @@ _styles.contents += ("less/cds.less",)
 
 
 js = Bundle(
-    "js/app.js",
-    "js/main.js",
+    "js/personal/init.js",
     output="cds.js",
     weight=91,
     filters="requirejs",
     bower={
-        "backbone": "latest",
-        "backbone.localstorage": "latest",
-        "react": "0.11.2",
-        "jsx-requirejs-plugin": "0.4",
-        "requirejs-plugins": "latest",
-        "es5-shim": "latest"
+        "es5-shim": "latest",
+        # Personal collections
+        "flight": ">1.2",
+        "async": "~1.2.1",
+        "depot": "~0.1.6",
+        "lodash": "~3.9.3",
+        "sortable.js": "~1.2.0",
+        "flight-hogan": "latest",
     },
     depends=[
-        "js/app.js",
-        "js/main.js",
-        "js/prototype/**/*.js"
+        "js/personal/init.js",
     ]
 )

@@ -1,0 +1,148 @@
+[
+  {
+    "header": {
+        "title": "CERN Bulletin",
+        "href": "http://cds.cern.ch/collection/CERN Bulletin Printable Version"
+    },
+    "footer": {
+        "label": "visit the CERN Bulletin",
+        "href": "http://cds.cern.ch/journal/CERNBulletin/2014/20/News%20Articles"
+    },
+    "items": [
+      {
+        "title": "CERN BUL",
+        "href": "http:jidasjdsaijdsaijdsajidsajisda"
+      },
+      {
+        "title": "CERN BUL",
+        "href": "http:jidasjdsaijdsaijdsajidsajisda"
+      }
+    ],
+    "_settings": {
+      "type": "record_list",
+      "title": "CERN Bulletin",
+      "collection": "Photos",
+      "pick": "latest"
+    }
+  },
+  {
+    "header": {
+        "title": "Ellis articles",
+        "href": "http://cds.cern.ch/collection/CERN Bulletin Printable Version"
+    },
+    "footer": {
+        "label": "visit the CERN Bulletin",
+        "href": "http://cds.cern.ch/journal/CERNBulletin/2014/20/News%20Articles"
+    },
+    "items": [
+      {
+        "title": "CERN BUL",
+        "href": "http:jidasjdsaijdsaijdsajidsajisda"
+      },
+      {
+        "title": "CERN BUL",
+        "href": "http:jidasjdsaijdsaijdsajidsajisda"
+      }
+    ],
+    "_settings": {
+      "type": "record_list",
+      "title": "Elist articles",
+      "query": "author:John Ellis"
+    }
+  },
+  {
+    "header": {
+        "title": "My image",
+        "href": "http://cds.cern.ch/collection/CERN Bulletin Printable Version"
+    },
+    "footer": {
+        "label": "visit the CERN Bulletin",
+        "href": "http://cds.cern.ch/journal/CERNBulletin/2014/20/News%20Articles"
+    },
+    "items": [
+      {
+        "title": "IMAGE FROM SPACE",
+        "href": "http:jidasjdsaijdsaijdsajidsajisda",
+        "src": "http://www.metalworkingworldmagazine.com/files/2015/04/nasa-aniversary-ftr.jpg"
+      }
+    ],
+    "_settings": {
+      "type": "image",
+      "title": "My image",
+      "query": "recid:5"
+    }
+  },
+  {
+    "header": {
+        "title": "CERN Bulletin",
+        "href": "http://cds.cern.ch/collection/CERN Bulletin Printable Version"
+    },
+    "footer": {
+        "label": "visit the CERN Bulletin",
+        "href": "http://cds.cern.ch/journal/CERNBulletin/2014/20/News%20Articles"
+    },
+    "items": [
+      {
+        "title": "CERN BUL",
+        "href": "http:jidasjdsaijdsaijdsajidsajisda"
+      },
+      {
+        "title": "CERN BUL",
+        "href": "http:jidasjdsaijdsaijdsajidsajisda"
+      }
+    ],
+    "_settings": {
+      "type": "record_list",
+      "title": "CERN Bulletin",
+      "collection": "Photos",
+      "pick": "latest"
+    }
+  },
+  {
+    "header": {
+        "title": "Ellis articles",
+        "href": "http://cds.cern.ch/collection/CERN Bulletin Printable Version"
+    },
+    "footer": {
+        "label": "visit the CERN Bulletin",
+        "href": "http://cds.cern.ch/journal/CERNBulletin/2014/20/News%20Articles"
+    },
+    "items": [
+      {
+        "title": "CERN BUL",
+        "href": "http:jidasjdsaijdsaijdsajidsajisda"
+      },
+      {
+        "title": "CERN BUL",
+        "href": "http:jidasjdsaijdsaijdsajidsajisda"
+      }
+    ],
+    "_settings": {
+      "type": "record_list",
+      "title": "Elist articles",
+      "query": "author:John Ellis"
+    }
+  },
+  {
+    "header": {
+        "title": "My image",
+        "href": "http://cds.cern.ch/collection/CERN Bulletin Printable Version"
+    },
+    "footer": {
+        "label": "visit the CERN Bulletin",
+        "href": "http://cds.cern.ch/journal/CERNBulletin/2014/20/News%20Articles"
+    },
+    "items": [
+      {
+        "title": "IMAGE FROM SPACE",
+        "href": "http:jidasjdsaijdsaijdsajidsajisda",
+        "src": "http://www.metalworkingworldmagazine.com/files/2015/04/nasa-aniversary-ftr.jpg"
+      }
+    ],
+    "_settings": {
+      "type": "image",
+      "title": "My image",
+      "query": "recid:5"
+    }
+  }
+]
