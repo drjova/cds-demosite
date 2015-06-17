@@ -18,4 +18,5 @@
  */
 
 // Extend invenio config
-require.config({})
+require.config({
+});

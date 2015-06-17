@@ -1,0 +1,36 @@
+<div data-id="{{id}}" class="col-md-4 col-sm-12">
+    <div data-init="{{init}}" data-box="{{id}}" data-state="view" data-id="{{id}}" class="personal-box personal-box-draggable">
+        <div class="personal-box-wrapper">
+            <div data-show="normal" class="personal-box-tools personal-box-actions-{{id}}">
+                <div class="text-right">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fa fa-ellipsis-v"></i>
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a href='#' data-type="edit" data-id="{{id}}" class="personal-box-actions-edit">Edit</a></li>
+                            <li><a href='#' data-type="delete" data-id="{{id}}" class="personal-box-actions-delete">Delete</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div data-show="edit" class="personal-admin-box-tools personal-admin-box-actions-{{id}}">
+                <div class="row">
+                    <div class="col-md-6">
+                        <select class="personal-admin-box-type form-control" name="type">
+                            <option value="record_list">Record list</option>
+                        </select>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="text-right">
+                            <a data-id="{{id}}" href="#" class="personal-box-actions-edit-close">X</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="personal-box-content personal-box-content-{{id}}">
+                {{{body}}}
+            </div>
+        </div>
+    </div>
+</div>
