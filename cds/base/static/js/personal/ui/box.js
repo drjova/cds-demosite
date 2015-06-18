@@ -1,4 +1,4 @@
-define(function (require) {
+define(function (require, exports, module) {
 
   'use strict';
 
@@ -6,25 +6,24 @@ define(function (require) {
    * Module dependencies
    */
 
+  require('hgn');
   var _ = require('lodash');
   var async = require('async');
   var defineComponent = require('flight/lib/component');
-  var withHogan = require('vendors/flight-hogan/lib/with_hogan');
   var boxStorage = require('js/personal/helpers/localStorage');
-
   /**
    * Templates dependencies
    */
 
-  var layoutSkeleton = require('text!./../templates/layout.mustache');
-  var boxSkeleton = require('text!./../templates/base/box.mustache');
-  var boxAdminSkeleton = require('text!./../templates/admin/box.mustache');
+  var templateLayout = require('hgn!./../templates/layout');
+  var defaultNormal = require('hgn!./../templates/base/default');
+  var defaultAdmin = require('hgn!./../templates/admin/default');
 
   /**
    * Module exports
    */
 
-  return defineComponent(Box, withHogan);
+  return defineComponent(Box);
 
   /**
    * Module function
@@ -35,17 +34,31 @@ define(function (require) {
       // General
       templates: function () {
         return {
-          'wrapper': layoutSkeleton,
-          'normal': boxSkeleton,
-          'edit': boxAdminSkeleton
+          'wrapper': {
+            'default': templateLayout,
+          },
+          'normal': {
+            'default': defaultNormal,
+            'record_list': defaultNormal,
+          },
+          'edit': {
+            'default': defaultAdmin,
+            'record_list': defaultAdmin,
+          },
+          'new':{
+            'default': defaultAdmin,
+            'record_list': defaultAdmin,
+          }
         }
       },
+      defaultBoxType: 'record_list',
       // Selectors
       // BOX
       boxSelector: '.personal-box',
       boxContentSelector: '.personal-box-content',
       // EDIT
       editSelector: '.personal-box-actions-edit',
+      editMenuSelector: '.personal-admin-box-type',
       saveEditSelector: '.personal-box-actions-edit-save',
       closeEditSelector: '.personal-box-actions-edit-close',
       // DELETE
@@ -119,10 +132,13 @@ define(function (require) {
      * - `personal.ui.box.render`
      */
     this.render = function(ev, data){
-      var html = this.renderTemplate(
-        this.attr.templates[data.template],
-        data.item
-      );
+      var html;
+      var that = this;
+      try{
+        html = that.attr.templates[data.template][data.item._settings.type](data.item);
+      }catch(error){
+        html = that.attr.templates[data.template]['default'](data.item);
+      }
       if (data.override){
         data.$el.html(html);
       }else{
@@ -215,7 +231,14 @@ define(function (require) {
      * - `personal.ui.box.content.change`
      */
     this.changeContent = function(ev, data){
-      var item = boxStorage.get(data.id) || {id: data.id, type: data.type};
+      var item = boxStorage.get(data.id) || {
+        init: false,
+        id: data.id,
+        type: data.type,
+        _settings: {
+          type: this.attr.defaultBoxType
+        }
+      };
       this.trigger(
         document,
         'personal.ui.box.render',
@@ -244,7 +267,14 @@ define(function (require) {
         'personal.data.boxes.loaded',
         {
           initWithView: 'edit',
-          items: [{id: this._temp_id_generator()}]
+          items: [
+            {
+              id: this._temp_id_generator(),
+              _settings:{
+                type: this.attr.defaultBoxType
+              },
+            }
+          ]
         }
       );
       this.trigger(
@@ -275,23 +305,55 @@ define(function (require) {
     }
 
     /**
-     * closeEditBox() Disables edit view of the box
+     * editMenuSelector() Changes the edit menu selector
      *
      * Triggers:
      * - `personal.ui.box.content.change`
      *
      * Listeners:
-     * - `click: closeEditSelector`
+     * - `change: editMenuSelector`
      */
-    this.closeEditBox = function(ev, data){
+    this.editMenuSelector = function(ev, data){
       var id = $(data.el).data('id');
       this.trigger(
         document,
         'personal.ui.box.content.change',
         {
           id: id,
-          type: 'normal'
+          type: 'edit'
         }
+      );
+    }
+
+    /**
+     * closeEditBox() Disables edit view of the box
+     *
+     * Triggers:
+     * - `personal.ui.box.general.content.change`
+     * - `personal.ui.box.delete`
+     *
+     * Listeners:
+     * - `click: closeEditSelector`
+     */
+    this.closeEditBox = function(ev, data){
+      var id = $(data.el).data('id');
+      var $box = this._find_box(id);
+      if (!$box.data('init')){
+        // If the box is new just remove it
+        $box.parent().remove();
+      }else{
+        this.trigger(
+          document,
+          'personal.ui.box.content.change',
+          {
+            id: id,
+            type: 'normal'
+          }
+        );
+      }
+      this.trigger(
+        document,
+        'personal.ui.box.general.content.change'
       );
     }
 
@@ -366,8 +428,12 @@ define(function (require) {
         'saveEditSelector': this.saveEditBox.bind(this),
         'deleteSelector': this.deleteBox.bind(this)
       });
+      this.on(document, 'change', {
+        'editMenuSelector': this.editMenuSelector.bind(this)
+      })
       // Trigger
       this.trigger(document, 'personal.ui.boxes.load');
+      this.trigger(document, 'personal.ui.boxes.init');
     });
     // AFTER INIT ============================================================
 

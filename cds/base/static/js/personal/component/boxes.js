@@ -1,4 +1,4 @@
-define(function (require) {
+define(function (require, exports, module) {
 
   'use strict';
 
@@ -24,8 +24,8 @@ define(function (require) {
     this.attributes({
       api: function(){
         return {
-          'GET': '/api/personal_collection/home',
-          'POST': '/api/personal_collection/home'
+          'boxes': '/api/personal_collection/home',
+          'settings': '/api/personal_collection/settings',
         }
       },
     });
@@ -49,16 +49,16 @@ define(function (require) {
      */
     this.pullFromServer = function(ev, data){
       var that = this;
-      console.log('Data to be sent', data.items);
       that.trigger(
         document,
         'personal.data.request.started'
       );
       $.ajax({
-        url: that.attr.api[data.method],
+        url: that.attr.api[data.type],
+        contentType: 'application/json',
         dataType: 'json',
         method: data.method,
-        data: data.items,
+        data: JSON.stringify(data.items),
         statusCode: {
           500: function(){
             that.trigger(
@@ -86,16 +86,18 @@ define(function (require) {
           }
         }
       })
-      .done(function(data, textStatus, jqXHR){
-        console.log('Success', data);
+      .done(function(response, textStatus, jqXHR){
         that.trigger(
           document,
           'personal.data.request.success',
-          data
+          {
+            boxes: response,
+            reload: (data.reload === undefined) ? true : data.reload,
+            type: data.type
+          }
         );
       })
       .fail(function(jqXHR, textStatus, errorThrown){
-        console.log('FAIL', jqXHR, textStatus, errorThrown);
         that.trigger(
           document,
           'personal.data.request.fail'
@@ -122,9 +124,11 @@ define(function (require) {
         'personal.data.request.load',
         {
           method: 'GET',
-          items: []
+          type: 'boxes',
+          items: {},
+          reload: true
         }
-      );
+      )
     }
 
     /**
@@ -137,17 +141,21 @@ define(function (require) {
     this.init = function(ev, data) {
       var that = this;
       boxStorage.destroyAll();
-      var items = data.data;
+      var items = data.boxes.data;
       async.forEachOf(items, function(item, index, callback) {
         item.id = index+1;
         item.order = index;
+        item.init = true;
         boxStorage.save(item);
         callback();
       }, function(err){
-        that.trigger(
-          document,
-          'personal.data.boxes.load'
-        );
+        // Update the order
+        if(data.reload){
+          that.trigger(
+            document,
+            'personal.data.boxes.load'
+          );
+        }
       });
     }
 
@@ -187,7 +195,18 @@ define(function (require) {
         document,
         'personal.data.boxes.load'
       );
-      // FIXME: SEND TO SERVER
+      this.trigger(
+        document,
+        'personal.data.request.load',
+        {
+          method: 'DELETE',
+          type: 'boxes',
+          items: {
+            index: data.id - 1
+          },
+          reload: false
+        }
+      );
     }
 
     /**
@@ -196,7 +215,7 @@ define(function (require) {
      * @param {Int} data.id
      *
      * Triggers:
-     * - `personal.data.boxes.init`
+     * - `personal.data.data.request.load`
      *
      * Listeners:
      * - `personal.ui.box.edt.save`
@@ -209,47 +228,68 @@ define(function (require) {
      */
     this.save = function(ev, data) {
       var that = this;
-      var justOrder = true;
       // We are saving or updating a box
-      if (data.data !== undefined) {
-        var box = boxStorage.get(data.id);
-        var settings = this._prepare_data(data.data);
-        if (box) {
-          // Update the box settings
-          box._settings = settings;
-          boxStorage.update(box);
-        } else {
-          // It's a new box save it and get the content
-          var newBox = {
-            id: data.id,
-            _settings: settings
-          }
-          boxStorage.save(newBox);
+      var box = boxStorage.get(data.id);
+      var settings = this._prepare_data(data.data);
+      if (box) {
+        // Update the box settings
+        box._settings = settings;
+        boxStorage.update(box);
+      } else {
+        // It's a new box save it and get the content
+        var newBox = {
+          id: data.id,
+          _settings: settings
         }
-        justOrder = false;
-      }
-      var orderedBoxes = localStorage.getItem('sortableOrder').split('|');
-      // Is just the order send the settings
-      var order = _.map(orderedBoxes, function(index){
-        return index - 1;
-      });
-      // The settings to be sent
-      var orderedSettings = _.at(this._prepare_settings(), order);
-      var items = {
-        data: orderedSettings
+        boxStorage.save(newBox);
       }
       this.trigger(
         document,
         'personal.data.request.load',
         {
           method: 'POST',
-          items: items
+          type: 'boxes',
+          items: {
+            data: this._get_ordered_boxes()
+          },
+          reload: true
         }
       );
       this.trigger(
         document,
         'personal.ui.box.added'
       );
+    }
+
+    /**
+     * order() Order the box
+     *
+     * @param {Int} data.id
+     *
+     * Triggers:
+     * - `personal.data.request.load`
+     *
+     * Listeners:
+     * - `personal.grid.order.changed`
+     *
+     */
+    this.order = function(ev, data) {
+      console.log('REquest order');
+      if (this._should_the_order_been_saved()){
+        console.log('Yes I should do it');
+        this.trigger(
+          document,
+          'personal.data.request.load',
+          {
+            method: 'POST',
+            type: 'boxes',
+            items: {
+              data: this._get_ordered_boxes()
+            },
+            reload: false
+          }
+        );
+      }
     }
 
     /**
@@ -279,6 +319,48 @@ define(function (require) {
       return data;
     }
 
+    /**
+     * _prepare_order() prepare order
+     *
+     * @return {List} the order of box indexes
+     *
+     */
+    this._prepare_order = function() {
+      var newOrder = localStorage.getItem('sortableOrder').split('|');
+      localStorage.setItem('boxesOrder', newOrder.join(','));
+      var order = _.map(newOrder, function(index){
+        return index - 1;
+      });
+      return order;
+    }
+
+    /**
+     * _should_the_order_been_saved() should we change the order
+     *
+     * @return {Boolean} Should we save the order
+     *
+     */
+    this._should_the_order_been_saved = function() {
+      var currentOrder = localStorage.getItem('boxesOrder');
+      if(currentOrder != ""){
+        var newOrder = localStorage.getItem('sortableOrder').split('|');
+        var must = (_.size(currentOrder) == _.size(newOrder) && !_.isEqual(currentOrder.split(','), newOrder)) ? true : false;
+        return must;
+      }
+      return true;
+    }
+
+    /**
+     * _get_ordered_boxes() ordered settings of the boxes, ready to be sent
+     * to the server
+     *
+     * @return {List} boxes settings
+     *
+     */
+    this._get_ordered_boxes = function() {
+      return _.at(this._prepare_settings(), this._prepare_order());
+    }
+
     this.after('initialize', function () {
       // Subscribe
       // UI
@@ -292,7 +374,7 @@ define(function (require) {
       this.on(document, 'personal.data.request.load', this.pullFromServer);
 
       // GRID
-      //this.on(document, 'personal.grid.order.changed', this.save);
+      this.on(document, 'personal.grid.order.changed', this.order);
       // Pull from server
       this.pull();
     });

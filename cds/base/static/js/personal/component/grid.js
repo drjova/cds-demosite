@@ -23,9 +23,10 @@ define(function (require) {
     this.attributes({
       gridID: 'personal-grid-handler',
       dragHandle: '.personal-box',
-      max: 7,
+      max: 9,
       // Selectors
-      addBoxSelector: '.personal-boxes-add-more'
+      addBoxSelector: '.personal-boxes-add-more',
+      gridLoader: '.personal-grid-loader',
     });
     this.initGrid = function(ev, data){
       // remove any previous cache
@@ -72,7 +73,6 @@ define(function (require) {
     }
     this.decideForMore = function(ev, data){
       var size = _.size(localStorage.getItem('boxes').split(','));
-      console.log('Size', size);
       if (size >= this.attr.max){
         $(this.select('addBoxSelector')).hide();
       }else{
@@ -85,15 +85,24 @@ define(function (require) {
     this.disableMore = function(ev, data){
       $(this.select('addBoxSelector')).hide();
     }
+    this.loaderShow = function(ev, data){
+      $(this.select('gridLoader')).css('visibility', 'visible');
+    }
+    this.loaderHide = function(ev, data){
+      $(this.select('gridLoader')).css('visibility', 'hidden');
+    }
     this.after('initialize', function () {
-      this.on(document, 'personal.ui.boxes.rendered', this.initGrid);
+      this.on(document, 'personal.ui.boxes.init', this.initGrid);
       this.on(document, 'personal.ui.box.add', this.disableMore);
       // Grid
       this.on(document, 'personal.ui.box.added', this.decideForMore);
       this.on(document, 'personal.ui.box.delete', this.decideForMore);
+      this.on(document, 'personal.ui.box.general.content.change', this.decideForMore);
       this.on(document, 'click', {
         'addBoxSelector': this.addMore
       });
+      this.on(document, 'personal.data.request.started', this.loaderShow);
+      this.on(document, 'personal.data.request.finished', this.loaderHide);
     });
   }
 });

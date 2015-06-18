@@ -121,7 +121,7 @@ class PersonalCollectionResource(Resource):
         if not current_user.is_authenticated():
             abort(401)
 
-        index = request.form.get('index', None)
+        index = request.get_json().get('index', None)
         if index is None:
             raise PersonalCollectionError(
                 message='An index is needed to delete a box.', status=412)
