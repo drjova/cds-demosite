@@ -274,9 +274,7 @@ define(function (require, exports, module) {
      *
      */
     this.order = function(ev, data) {
-      console.log('REquest order');
       if (this._should_the_order_been_saved()){
-        console.log('Yes I should do it');
         this.trigger(
           document,
           'personal.data.request.load',
@@ -342,9 +340,9 @@ define(function (require, exports, module) {
      */
     this._should_the_order_been_saved = function() {
       var currentOrder = localStorage.getItem('boxesOrder');
-      if(currentOrder != ""){
-        var newOrder = localStorage.getItem('sortableOrder').split('|');
-        var must = (_.size(currentOrder) == _.size(newOrder) && !_.isEqual(currentOrder.split(','), newOrder)) ? true : false;
+      if(!_.isEmpty(currentOrder)){
+        var newOrder = localStorage.getItem('sortableOrder');
+        var must = (_.size(currentOrder) == _.size(newOrder) && !_.isEqual(currentOrder.split(','), newOrder.split('|'))) ? true : false;
         return must;
       }
       return true;
