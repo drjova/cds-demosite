@@ -1,493 +1,239 @@
-define(function (require, exports, module) {
+define(function (require) {
 
-  'use strict';
-
-  /**
-   * Module dependencies
-   */
-
-  require('hgn');
+  var $ = require('jquery');
+  // Components
   var _ = require('vendors/lodash/lodash');
   var async = require('vendors/async/lib/async');
+  var boxStorage = require('js/personal/helpers/boxStorage');
   var defineComponent = require('flight/lib/component');
-  var boxStorage = require('js/personal/helpers/localStorage');
-  /**
-   * Templates dependencies
-   */
+  var gridStorage = require('js/personal/helpers/gridStorage');
 
-  var templateLayout = require('hgn!./../templates/layout');
-  var defaultNormal = require('hgn!./../templates/base/default');
-  var defaultAdmin = require('hgn!./../templates/admin/default');
+  // Templates
+  var wrapperTemplate = require('hgn!./../templates/layout');
+  var navTemplate = require('hgn!./../templates/nav');
+  var headerTemplate = require('hgn!./../templates/header');
+  var footerTemplate = require('hgn!./../templates/footer');
 
-  /**
-   * Module exports
-   */
-
+  // Define flightjs component
   return defineComponent(Box);
 
-  /**
-   * Module function
-   */
-
-  function Box() {
+  function Box(){
     this.defaultAttrs({
-      // General
-      templates: function () {
-        return {
-          'wrapper': {
-            'default': templateLayout,
-          },
-          'normal': {
-            'default': defaultNormal,
-            'record_list': defaultNormal,
-          },
-          'edit': {
-            'default': defaultAdmin,
-            'record_list': defaultAdmin,
-          },
-          'new':{
-            'default': defaultAdmin,
-            'record_list': defaultAdmin,
-          }
-        }
-      },
-      defaultBoxType: 'record_list',
-      // Selectors
-      // BOX
-      boxSelector: '.personal-box',
-      boxContentSelector: '.personal-box-content',
-      // EDIT
-      editSelector: '.personal-box-actions-edit',
-      editMenuSelector: '.personal-admin-box-type',
-      saveEditSelector: '.personal-box-actions-edit-save',
-      closeEditSelector: '.personal-box-actions-edit-close',
-      // DELETE
-      deleteSelector: '.personal-box-actions-delete',
+      addNewBox: '.personal-boxes-add-more',
+      boxBodySelector: '.personal-box-body',
+      boxChangeState: '.personal-box-change-state',
+      boxFooterSelector: '.personal-box-footer',
+      boxHeaderSelector: '.personal-box-header',
+      deleteBox: '.personal-box-delete',
+      saveBox: '.personal-box-save',
+      editTemplate: '.personal-box-edit-template',
+      collection: null,
+      templates: {
+        record_list: {
+          normal: require('hgn!./../templates/normal/record_list'),
+          edit: require('hgn!./../templates/edit/record_list'),
+        },
+        loading: require('hgn!./../templates/loading'),
+        newBox: require('hgn!./../templates/new'),
+      }
     });
 
-    /**
-     * renderBoxes() returns a box wrapper to
-     * the DOM
-     *
-     * @param {Object} data.items
-     * @param {String} data.initWithView
-     *
-     * Triggers:
-     * - `personal.ui.box.render`
-     * - `personal.ui.boxes.render.finished`
-     *
-     * Listeners
-     * - `personal.data.boxes.loaded`
-     */
-    this.renderBoxes = function(ev, data){
+    this.init = function (ev, args) {
+      // Get all boxes
       var that = this;
-      async.eachSeries(data.items, function(item, callback){
-        that.trigger(
-          document,
-          'personal.ui.box.render',
-          {
-            $el: that.$node,
-            item: item,
-            template: 'wrapper',
-            override: false
-          }
-        );
-        if (data.initWithView !== undefined){
-          that.trigger(
-            document,
-            'personal.ui.box.content.change',
-            {
-              id: item.id,
-              item: item,
-              type: data.initWithView
-            }
+      var boxes = boxStorage.all();
+      async.forEach(boxes, function(box, callback){
+        var html = wrapperTemplate(box, {
+          nav: navTemplate.template,
+          header: headerTemplate.template,
+          footer: footerTemplate.template,
+        });
+        that.$node.append(html);
+        callback();
+      }, function(error){
+        if (error) {
+          that.trigger(document, 'personal.wrapper.errorMessage');
+        } else {
+          that.trigger(document, 'personal.boxes.ui.render', {
+            boxes: _.pluck(boxes, 'id')
+          });
+          that.trigger(document, 'personal.boxes.ui.rendered');
+        }
+      });
+    };
+
+    this.render = function (ev, args) {
+      var that = this;
+      async.forEach(args.boxes, function(id, callback){
+        // Get box from storage
+        var box = boxStorage.get(id);
+        var $box = $('[data-id='+id+']');
+        var state = $box.data('state');
+        console.log(box, id, state);
+        if (state == 'newBox' || state == 'loading'){
+          // Get the $element
+          $box.find(that.attr.boxBodySelector).html(
+            that.attr.templates[state](box)
+          );
+        } else {
+          $box.find(that.attr.boxBodySelector).html(
+            that.attr.templates[box._settings.type][state](box)
           );
         }
         callback();
-      }, function(err){
-        if(!err){
-          that.trigger(
-            document,
-            'personal.ui.boxes.rendered'
-          );
-        }
       });
+    };
+
+    this.addNewBox = function(ev, args) {
+      this._addNewBox();
     }
 
-    /**
-     * render() renders and returns the
-     * specified element to the DOM
-     *
-     * @param {Compiled Hogan Template} data.template
-     * @param {String} data.type
-     * @param {Object} data.item
-     * @param {Boolean} data.override
-     * @param {jQuery Selector} data.$el
-     *
-     * Triggers:
-     * - `personal.ui.box.rendered`
-     * - `personal.ui.box.state.change`
-     *
-     * Listeners:
-     * - `personal.ui.box.render`
-     */
-    this.render = function(ev, data){
-      var html;
-      var that = this;
-      try{
-        html = that.attr.templates[data.template][data.item._settings.type](data.item);
-      }catch(error){
-        html = that.attr.templates[data.template]['default'](data.item);
-      }
-      if (data.override){
-        data.$el.html(html);
-      }else{
-        data.$el.append(html);
-      }
-      this.trigger(
-        document,
-        'personal.ui.box.rendered',
-        {
-          item: data.item,
-          template: data.template
-        }
-      );
-      if (data.type !== undefined){
-        this.trigger(
-          document,
-          'personal.ui.box.state.change',
-          {
-            id: data.item.id,
-            type: data.type
-          }
-        );
-      }
+    this.changeState = function(ev, args) {
+      var $target = $(ev.target);
+      var state = args.state || $target.data('state');
+      var id = args.id || this._findIDFromTarget(ev.target);
+      // Change state
+      this._changeState(id, state);
+    };
+
+    this.deleteBox = function (ev, args) {
+      var id = this._findIDFromTarget(ev.target);
+      this._deleteBox(id);
     }
 
-    /**
-     * clear() clears the `this.$node`
-     *
-     * Triggers:
-     * `personal.ui.boxes.cleared`
-     *
-     * Listeners:
-     * - `personal.ui.boxes.clear`
-     */
-    this.clear = function(ev, data){
-      this.$node.empty();
-      this.trigger(document, 'personal.ui.boxes.cleared');
+    this.saveBox = function (ev, args) {
+      var id = this._findIDFromTarget(ev.target);
+      this._saveBox(id);
     }
 
-    /**
-     * change_state() changes the state of the
-     * selected `box` and hides/shows based on
-     * `type` parameter
-     *
-     * @param {Int} data.id
-     * @param {String} data.type
-     *
-     * Triggers:
-     * - `personal.ui.box.state.changed`
-     *
-     * Listeners:
-     * - `personal.ui.box.state.change`
-     */
-    this.changeState = function(ev, data){
-      var $el = this._find_box(data.id);
-      // Get the previous box state
-      var previous = $el.data('state');
-      // Save it
-      $el.data('previous-state', previous);
-      // Change the state to the new one
-      $el.data('state', data.type);
-      // Make a dance and find which element should be shown
-      // for this type
-      $el.find('[data-show]').each(function(index, item){
+    this.editTemplate = function (ev, args) {
+      var id = this._findIDFromTarget(ev.target);
+      this._editTemplate(id);
+    }
+
+    this.hideOnState = function(ev, args) {
+      var $box = this._findBox(args.id);
+      var state = args.state;
+      $box.find('[data-show]').each(function(index, item){
         var $item = $(item);
-        if($item.data('show') != data.type){
+        if($item.data('show') != state){
           $item.hide();
         }else{
           $item.show();
         }
       });
-      this.trigger(document, 'personal.ui.box.state.changed', {
-        id: data.id,
-        from: previous,
-        to: data.type,
-      });
-    }
+    };
 
-    /**
-     * changeContent() changes the box content
-     *
-     * @param {Int} data.id
-     * @param {String} data.type
-     *
-     * Triggers:
-     * - `personal.ui.box.render`
-     * - `personal.ui.box.content.changed`
-     *
-     * Listeners:
-     * - `personal.ui.box.content.change`
-     */
-    this.changeContent = function(ev, data){
-      var item = boxStorage.get(data.id) || {
-        init: false,
-        id: data.id,
-        type: data.type,
-        _settings: {
-          type: this.attr.defaultBoxType
-        }
-      };
-      this.trigger(
-        document,
-        'personal.ui.box.render',
-        {
-          $el: this._find_content(data.id),
-          item: item,
-          template: data.type,
-          override: true,
-          type: data.type
-        }
-      );
-    }
-
-    /**
-     * addBox() adds a new empty box to the DOM
-     *
-     * Triggers:
-     * - `personal.ui.box.add`
-     *
-     * Listeners:
-     * - `personal.ui.boxes.add`
-     */
-    this.addBox = function(ev, data){
-      this.trigger(
-        document,
-        'personal.data.boxes.loaded',
-        {
-          initWithView: 'edit',
-          items: [
-            {
-              id: this._temp_id_generator(),
-              _settings:{
-                type: this.attr.defaultBoxType
-              },
-            }
-          ]
-        }
-      );
-      this.trigger(
-        document,
-        'personal.ui.box.add'
-      );
-    }
-
-    /**
-     * editBox() Enables edit view of the box
-     *
-     * Triggers:
-     * - `personal.ui.box.content.change`
-     *
-     * Listeners:
-     * - `click: editSelector`
-     */
-    this.editBox = function(ev, data){
-      var id = $(data.el).data('id');
-      this.trigger(
-        document,
-        'personal.ui.box.content.change',
-        {
-          id: id,
-          type: 'edit'
-        }
-      );
-    }
-
-    /**
-     * editMenuSelector() Changes the edit menu selector
-     *
-     * Triggers:
-     * - `personal.ui.box.content.change`
-     *
-     * Listeners:
-     * - `change: editMenuSelector`
-     */
-    this.editMenuSelector = function(ev, data){
-      var id = $(data.el).data('id');
-      this.trigger(
-        document,
-        'personal.ui.box.content.change',
-        {
-          id: id,
-          type: 'edit'
-        }
-      );
-    }
-
-    /**
-     * closeEditBox() Disables edit view of the box
-     *
-     * Triggers:
-     * - `personal.ui.box.general.content.change`
-     * - `personal.ui.box.delete`
-     *
-     * Listeners:
-     * - `click: closeEditSelector`
-     */
-    this.closeEditBox = function(ev, data){
-      var id = $(data.el).data('id');
-      var $box = this._find_box(id);
-      if (!$box.data('init')){
-        // If the box is new just remove it
-        $box.parent().remove();
-      }else{
-        this.trigger(
-          document,
-          'personal.ui.box.content.change',
-          {
-            id: id,
-            type: 'normal'
-          }
-        );
-      }
-      this.trigger(
-        document,
-        'personal.ui.box.general.content.change'
-      );
-    }
-
-    /**
-     * saveEditBox() Save the box configuration
-     *
-     * Triggers:
-     * - `personal.data.box.edit.save`
-     * - `personal.ui.box.content.change`
-     *
-     * Listeners:
-     * - `click: saveEditSelector`
-     */
-    this.saveEditBox = function(ev, data){
-      var id = $(data.el).data('id');
-      this.trigger(
-        document,
-        'personal.data.box.edit.save',
-        {
-          id: id,
-          data: this._find_form_data(id)
-        }
-      );
-      this.trigger(
-        document,
-        'personal.ui.box.content.change',
-        {
-          id: id,
-          type: 'normal'
-        }
-      );
-    }
-
-    /**
-     * deleteBox() Delete the box
-     *
-     * Triggers:
-     * - `personal.ui.box.delete`
-     *
-     * Listeners:
-     * - `click: deleteSelector`
-     */
-    this.deleteBox = function(ev, data){
-      var id = $(data.el).data('id');
-      this.trigger(
-        document,
-        'personal.ui.box.delete',
-        {
-          id: id
-        }
-      );
-    }
-
-
-    // AFTER INIT ===========================================================
     this.after('initialize', function () {
-      // Subscribe
-      // =========
-      // DATA
-      this.on(document, 'personal.data.boxes.loaded', this.renderBoxes);
-      // UI Box
-      this.on(document, 'personal.ui.box.render', this.render);
-      this.on(document, 'personal.ui.box.state.change', this.changeState);
-      this.on(document, 'personal.ui.box.content.change', this.changeContent);
-      // UI Boxes
-      this.on(document, 'personal.ui.boxes.add', this.addBox);
-      this.on(document, 'personal.ui.boxes.clear', this.clear);
-      // UI EVENTS
+      this.on(document, 'personal.boxes.ui.add', this.addNewBox);
+      this.on(document, 'personal.boxes.ui.changeState', this.changeState);
+      this.on(document, 'personal.boxes.ui.hideOnState', this.hideOnState);
+      this.on(document, 'personal.boxes.ui.init', this.init);
+      this.on(document, 'personal.boxes.ui.render', this.render);
       this.on(document, 'click', {
-        'editSelector': this.editBox.bind(this),
-        'closeEditSelector': this.closeEditBox.bind(this),
-        'saveEditSelector': this.saveEditBox.bind(this),
-        'deleteSelector': this.deleteBox.bind(this)
+        'addNewBox': this.addNewBox,
+        'boxChangeState': this.changeState,
+        'deleteBox': this.deleteBox,
+        'saveBox': this.saveBox,
+        'editTemplate': this.editTemplate,
       });
-      this.on(document, 'change', {
-        'editMenuSelector': this.editMenuSelector.bind(this)
-      })
-      // Trigger
-      this.trigger(document, 'personal.ui.boxes.load');
-      this.trigger(document, 'personal.ui.boxes.init');
     });
-    // AFTER INIT ============================================================
 
-    // HELPERS ===============================================================
-    /**
-      * _find_box() finds and returns the `box`
-      *
-      * @param {Int} id
-      * @return {jQuery Selector} $box
-      */
-    this._find_box = function(id){
-      var $box = $('[data-box='+id+']').first();
+    this._changeState = function (id, state) {
+      var $box = this._findBox(id);
+      $box.data('state', state);
+      // Fire box state changed
+      this.trigger(document, 'personal.boxes.ui.state.changed', {
+        id: $box.data('id'),
+        state: state
+      });
+      // Fire box render
+      this.trigger(document, 'personal.boxes.ui.render', {
+        boxes: [$box.data('id')]
+      });
+      this.trigger(document, 'personal.boxes.ui.hideOnState', {
+        id: $box.data('id'),
+        state: state
+      });
+    }
+
+    this._addNewBox = function() {
+      var id = this._tempIDGenerator();
+      var box = {
+        id: id,
+        _settings: {
+          type: 'newBox'
+        },
+        dummy: true
+      }
+      // Save the dummy box
+      boxStorage.save(box);
+      var html = wrapperTemplate(box, {
+        nav: navTemplate.template,
+        header: headerTemplate.template,
+        footer: footerTemplate.template,
+      });
+      this.$node.append(html);
+      this._changeState(id, 'newBox');
+    }
+
+    this._deleteBox = function(id) {
+      var $box = this._findBox(id);
+      // Check if is it Dummy
+      if (!this._isDummy(id)){
+        //FIXME DELETE
+      }
+      // Remove it from storage
+      boxStorage.destroy(id);
+      // Destroy it from DOM
+      $box.remove();
+    }
+
+    this._saveBox = function(id) {
+      var settings = this._findFormData(id);
+      this.trigger(document, 'personal.boxes.data.update', {
+        id: id,
+        settings: settings
+      });
+    }
+
+    this._editTemplate = function (id) {
+      var data = this._findFormData(id);
+      var box = boxStorage.get(id)
+      box._settings.type = data.template;
+      boxStorage.update(box);
+      this._changeState(id, 'edit');
+    }
+
+    this._findFormData = function(id){
+      // Get the content
+      var $content = this._findBox(id);
+      var data = $content.find('form').serializeArray();
+      return _.zipObject(_.map(data, _.values));
+    }
+
+    this._findBox = function(id){
+      var $box = $('[data-id='+id+']').first();
       return $box;
     }
 
-    /**
-      * _find_content() finds and returns the `box`
-      * content selector
-      *
-      * @param {Int} id
-      * @return {jQuery Selector} $content
-      */
-    this._find_content = function(id){
-      // Get the BOX
-      var $box = this._find_box(id);
-      // Get the content
-      var $content = $box.find(this.select('boxContentSelector'))
-        .first();
-      return $content;
-    }
-
-    /**
-      * _get_form_data() Get form data
-      * content selector
-      *
-      * @param {Int} id
-      * @return {Object} data
-      */
-    this._find_form_data = function(id){
-      // Get the content
-      var $content = this._find_content(id);
-      var data = $content.find('form').serializeArray();
-      return data;
-    }
-
-    /**
-      * _temp_id_generator() creates a temp box id
-      *
-      * @return {Int} int
-      */
-    this._temp_id_generator = function(){
+    this._tempIDGenerator = function(){
       var boxes = boxStorage.all();
       return _.size(boxes) + 1;
     }
-    // HELPERS ===============================================================
+
+    this._isDummy = function(id) {
+      var box = boxStorage.get(id);
+      return _.isUndefined(box.dummy) ? false : true;
+    }
+
+    this._findIDFromTarget = function (target){
+      var $target = $(target);
+      var id = $target
+                .closest('[data-id]')
+                .first()
+                .data('id');
+      return id;
+    }
   }
 });

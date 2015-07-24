@@ -1,4 +1,4 @@
-define(function (require) {
+define(function (require, exports, module) {
 
   'use strict';
 
@@ -9,6 +9,7 @@ define(function (require) {
   var Grid = require('js/personal/component/grid');
   var Boxes = require('js/personal/component/boxes');
   var Box = require('js/personal/ui/box');
+
   /**
    * Module exports
    */
@@ -20,9 +21,19 @@ define(function (require) {
    */
 
   function initialize() {
-    Grid.attachTo('#grid');
-    Boxes.attachTo(document);
-    Box.attachTo('.personal-boxes');
+    var collection = 'home';
+    Grid.attachTo('#grid', {
+      collection: collection
+    });
+    Boxes.attachTo(document, {
+      collection: collection,
+      api: {
+        boxes: '/api/personal_collection/home',
+        settings: '/api/personal_collection/settings',
+      }
+    });
+    Box.attachTo('.personal-boxes', {
+      collection: collection,
+    });
   }
-
 });

@@ -1,108 +1,50 @@
 define(function (require) {
 
-  'use strict';
-
-  /**
-   * Module dependencies
-   */
-
-  var defineComponent = require('flight/lib/component');
-  var Sortable = require('vendors/sortable.js/sortable');
   var _ = require('vendors/lodash/lodash');
-  /**
-   * Module exports
-   */
+  var defineComponent = require('flight/lib/component');
+  var boxStorage = require('js/personal/helpers/boxStorage');
+  var gridStorage = require('js/personal/helpers/gridStorage');
+  var sortable = require('vendors/sortable.js/sortable');
 
-  return defineComponent(grid);
+  return defineComponent(Grid);
 
-  /**
-   * Module function
-   */
-
-  function grid() {
+  function Grid() {
     this.defaultAttrs({
-      gridID: 'personal-grid-handler',
+      ID: 'personal-grid-handler',
       dragHandle: '.personal-box',
-      max: 9,
-      // Selectors
-      addBoxSelector: '.personal-boxes-add-more',
-      gridLoader: '.personal-grid-loader',
+      collection: null,
     });
-    this.initGrid = function(ev, data){
-      // remove any previous cache
-      localStorage.setItem("sortableOrder", "");
+
+    // Init
+    this.init = function (ev, args) {
       var that = this;
-      var container = document.getElementById(that.attr.gridID);
-      var sort = Sortable.create(container, {
+      var el = document.getElementById(that.attr.ID);
+      // delete localStorage
+      var sort = sortable.create(el, {
         animation: 250,
         dataIdAttr: 'data-id',
         handle: that.attr.dragHandle,
-        onStart: function(evt){
-          that.trigger(document, 'personal.grid.position.started', {
-            index: evt.oldIndex
-          });
-        },
-        onEnd: function(evt){
-          that.trigger(document, 'personal.grid.position.finished', {
-            old: evt.oldIndex,
-            current: evt.newIndex
-          });
-        },
-        onMove: function(evt){
-          that.trigger(document, 'personal.grid.position.move', {
-            dragged: evt.dragged,
-            draggedRect: evt.dragged,
-            related: evt.related,
-            relatedRect: evt.relatedRect,
-          });
+        onUpdate: function (evt) {
+          that.trigger(document, 'personal.boxes.data.order');
         },
         store: {
-          get: function (sortable) {
-            var order = localStorage.getItem("sortableOrder");
-            return order ? order.split('|') : [];
-          },
-          set: function (sortable) {
-            var order = sortable.toArray();
-            localStorage.setItem("sortableOrder", order.join('|'));
-            that.trigger(document, 'personal.grid.order.changed', {
-              order: order
-            });
-          }
+            get: function (sortable) {
+              var order = gridStorage.get('current');
+              return order.ids || [];
+            },
+            set: function (sortable) {
+                var order = sortable.toArray();
+                gridStorage.update({'id': 'current', ids: _.map(order, _.parseInt)});
+            }
         }
       });
-    }
-    this.decideForMore = function(ev, data){
-      var size = _.size(localStorage.getItem('boxes').split(','));
-      if (size >= this.attr.max){
-        $(this.select('addBoxSelector')).hide();
-      }else{
-        $(this.select('addBoxSelector')).show();
-      }
-    }
-    this.addMore = function(ev, data){
-      this.trigger(document, 'personal.ui.boxes.add');
-    }
-    this.disableMore = function(ev, data){
-      $(this.select('addBoxSelector')).hide();
-    }
-    this.loaderShow = function(ev, data){
-      $(this.select('gridLoader')).css('visibility', 'visible');
-    }
-    this.loaderHide = function(ev, data){
-      $(this.select('gridLoader')).css('visibility', 'hidden');
-    }
+    };
+
+    // After initialization
     this.after('initialize', function () {
-      this.on(document, 'personal.ui.boxes.init', this.initGrid);
-      this.on(document, 'personal.ui.box.add', this.disableMore);
-      // Grid
-      this.on(document, 'personal.ui.box.added', this.decideForMore);
-      this.on(document, 'personal.ui.box.delete', this.decideForMore);
-      this.on(document, 'personal.ui.box.general.content.change', this.decideForMore);
-      this.on(document, 'click', {
-        'addBoxSelector': this.addMore
-      });
-      this.on(document, 'personal.data.request.started', this.loaderShow);
-      this.on(document, 'personal.data.request.finished', this.loaderHide);
+      this.on(document, 'personal.boxes.ui.rendered', this.init);
+      this.on(document, 'personal.boxes.data.init', this.initOrder);
+      this.trigger(document, 'personal.grid.initialized');
     });
   }
 });

@@ -1,4 +1,4 @@
-<div data-show="edit">
+<div class="personal-box-body-edit" data-show="edit">
     <form id="personal-box-admin-form" data-id="{{id}}">
         <div class="form-group">
             <label>Box title</label>
@@ -13,6 +13,16 @@
             <input type="text" class="form-control" name="collection" value="{{ _settings.collection}}" />
         </div>
         <input type="hidden" name="type" value="{{_settings.type}}" />
-        <a href="#" data-id="{{id}}" class="btn btn-success btn-block personal-box-actions-edit-save">Save</a>
     </form>
+    <div class="personal-box-body-edit-footer">
+        <div class="text-right">
+            {{#_settings.title}}
+                <a href="#" data-state="normal" class="btn btn-small btn-default personal-box-change-state">Cancel</a>
+            {{/_settings.title}}
+            {{^_settings.title}}
+                <a href="#" class="btn btn-small btn-danger personal-box-delete">Delete</a>
+            {{/_settings.title}}
+            <a href="#" class="btn btn-small btn-success personal-box-save">Save</a>
+        </div>
+    </div>
 </div>
