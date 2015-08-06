@@ -28,7 +28,7 @@ define(function (require, exports, module) {
     Boxes.attachTo(document, {
       collection: collection,
       api: {
-        boxes: '/api/personal_collection/home',
+        boxes: '/api/personal_collection/'+collection,
         settings: '/api/personal_collection/settings',
       }
     });

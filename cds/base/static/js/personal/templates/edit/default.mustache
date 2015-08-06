@@ -16,11 +16,13 @@
     </form>
     <div class="personal-box-body-edit-footer">
         <div class="text-right">
-            <a href="#" class="btn btn-small btn-success btn-block personal-box-ui-save">Save</a>
-            <a href="#" class="btn btn-small btn-danger btn-block personal-box-ui-delete personal-box-delete">Delete</a>
             {{#_settings.title}}
-                <a href="#" data-state="normal" class="btn btn-small btn-block btn-default personal-box-ui-normal personal-box-ui-state">Cancel</a>
+                <a href="#" data-state="normal" class="btn btn-small btn-default personal-box-change-state">Cancel</a>
             {{/_settings.title}}
+            {{^_settings.title}}
+                <a href="#" class="btn btn-small btn-danger personal-box-delete">Delete</a>
+            {{/_settings.title}}
+            <a href="#" class="btn btn-small btn-success personal-box-save">Save</a>
         </div>
     </div>
 </div>

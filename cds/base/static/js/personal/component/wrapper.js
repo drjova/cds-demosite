@@ -23,23 +23,24 @@ define(function (require) {
     };
 
     this.showAddButton = function (ev, args) {
-      $(this.select('addBoxSelector')).show();
+      $(this.attr.addBoxSelector).show();
     };
 
     this.hideAddButton = function (ev, args){
-      $(this.select('addBoxSelector')).hide();
+      $(this.attr.addBoxSelector).hide();
     };
 
     this.showLoader = function (ev, args){
-      $(this.select('gridLoader')).css('visibility', 'visible');
+      $(this.attr.gridLoader).css('visibility', 'visible');
     };
 
     this.hideLoader = function (ev, args){
-      $(this.select('gridLoader')).css('visibility', 'hidden');
+      consol.log('hey')
+      $(this.attr.gridLoader).css('visibility', 'hidden');
     };
 
     this.errorMessage = function (ev, args) {
-      $(this.select).html(args.message);
+      $(this.attr.errorMessage).html(args.message);
     };
 
     this.after('initialize', function () {
