@@ -17,6 +17,6 @@
 # along with Invenio; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-"""CDS special/custom tags"""
+"""Import all fields."""
 
-from __future__ import unicode_literals
+from default import *

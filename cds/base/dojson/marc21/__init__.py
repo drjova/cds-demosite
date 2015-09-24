@@ -17,25 +17,36 @@
 # along with Invenio; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
+from invenio.utils.datastructures import SmartDict
 
-from .fields import (
-    bd01x09x,
-    bd2xx,
-    bd5xx,
-    bd69x,
-    bd7xx,
-    bd8xx,
-    bd9xx,
-)
-from .model import cds_marc21
+from invenio_search.api import Query
+
+from .registry import translations as _translations
 
 
 def convert_cdsmarcxml(source):
-    """Convert CDS MARC XML to JSON."""
+    """Convert CDS to JSON."""
     from dojson.contrib.marc21.utils import create_record, split_blob
 
     for data in split_blob(source.read()):
-        yield cds_marc21.do(create_record(data))
+        record = create_record(data)
+        yield query_matcher(record).do(record)
 
 
-__all__ = ('cds_marc21', 'convert_cdsmarcxml')
+def query_matcher(record):
+    """Record query matcher.
+
+    :param record: :func:`dojson.contrib.marc21.utils.create_record` object.
+    """
+    from cds.base.dojson.marc21.translations.default import (
+        translation as marc21_default_translation
+    )
+
+    for name, translation in _translations.iteritems():
+        translation_query = translation.__query__
+        if translation_query:
+            query = Query(translation_query)
+            if query.match(SmartDict(record)):
+                return translation
+    else:
+        return marc21_default_translation

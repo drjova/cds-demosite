@@ -17,20 +17,14 @@
 # along with Invenio; if not, write to the Free Software Foundation, Inc.,
 # 59 Temple Place, Suite 330, Boston, MA 02111-1307, USA.
 
-"""CDS special/custom tags."""
+"""CDS special/custom tags"""
 
-from dojson import utils
-
-from ..model import cds_marc21
-
-
-@cds_marc21.over('electronic_mail_message', '^859__')
-@utils.for_each_value
-@utils.filter_values
-def electronic_mail_message(self, key, value):
-    """Electronic mail message"""
-    return {
-        'contact': value.get('a'),
-        'e-mail_address': value.get('f'),
-        'date': value.get('x'),
-    }
+from . import(
+    bd01x09x,
+    bd2xx,
+    bd5xx,
+    bd69x,
+    bd7xx,
+    bd8xx,
+    bd9xx,
+)
