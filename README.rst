@@ -2,7 +2,7 @@
 CDS
 ===
 
-.. image:: https://travis-ci.org/CERNDocumentServer/cds.svg
+.. image:: https://travis-ci.org/CERNDocumentServer/cds.svg?branch=cdslabs_qa
     :target: https://travis-ci.org/CERNDocumentServer/cds
 
 This is the CERN Document Server source code overlay.
