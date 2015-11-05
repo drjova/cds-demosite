@@ -22,6 +22,38 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-"""CDS Modules."""
+"""CDS bundles."""
 
 from __future__ import absolute_import, print_function
+
+from flask_assets import Bundle
+from invenio_assets import BowerBundle
+
+css = BowerBundle(
+    'scss/cds.scss',
+    filters='scss, cleancss',
+    output='gen/cds.%(version)s.css',
+    bower={
+        "almond": "~0.3.1",
+        "bootstrap-sass": "~3.3.5",
+        "font-awesome": "~4.4.0"
+    }
+)
+
+js = BowerBundle(
+    Bundle(
+        'bower_components/almond/almond.js',
+        'js/settings.js',
+        filters='uglifyjs',
+    ),
+    Bundle(
+        'js/main.js',
+        filters='requirejs',
+    ),
+    filters='jsmin',
+    output="gen/cds.%(version)s.js",
+    bower={
+        "almond": "~0.3.1",
+        "angular": "~1.4.7",
+    }
+)

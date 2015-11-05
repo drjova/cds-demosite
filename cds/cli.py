@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Invenio.
-# Copyright (C) 2015 CERN.
+# Copyright (C) 2014, 2015 CERN.
 #
 # Invenio is free software; you can redistribute it
 # and/or modify it under the terms of the GNU General Public License as
@@ -22,6 +22,12 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-"""CDS Modules."""
+"""CDS base Invenio configuration."""
 
 from __future__ import absolute_import, print_function
+
+from invenio_base.app import create_cli
+
+from .factory import create_app
+
+cli = create_cli(create_app=create_app)

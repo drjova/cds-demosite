@@ -22,6 +22,22 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-"""CDS Modules."""
+"""CDS interface."""
 
 from __future__ import absolute_import, print_function
+
+from flask import Blueprint, render_template
+
+
+blueprint = Blueprint(
+    'cds',
+    __name__,
+    template_folder='templates',
+    static_folder='static'
+)
+
+
+@blueprint.route('/')
+def home():
+    """CDS Home page."""
+    return render_template('cds_theme/page.html')

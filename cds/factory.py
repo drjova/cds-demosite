@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 #
 # This file is part of Invenio.
-# Copyright (C) 2015 CERN.
+# Copyright (C) 2014, 2015 CERN.
 #
 # Invenio is free software; you can redistribute it
 # and/or modify it under the terms of the GNU General Public License as
@@ -22,6 +22,32 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-"""CDS Modules."""
+"""Mysite Invenio API application."""
 
-from __future__ import absolute_import, print_function
+from invenio_base.app import create_app_factory
+from invenio_base.wsgi import create_wsgi_factory
+from invenio_config import create_conf_loader
+
+from . import config
+
+env_prefix = 'APP'
+
+conf_loader = create_conf_loader(config=config, env_prefix=env_prefix)
+
+create_api = create_app_factory(
+    'cds',
+    env_prefix=env_prefix,
+    conf_loader=conf_loader,
+    bp_entry_points=['invenio_base.api_blueprints'],
+    ext_entry_points=['invenio_base.api_apps'],
+)
+
+
+create_app = create_app_factory(
+    'cds',
+    env_prefix=env_prefix,
+    conf_loader=conf_loader,
+    bp_entry_points=['invenio_base.blueprints'],
+    ext_entry_points=['invenio_base.apps'],
+    wsgi_factory=create_wsgi_factory({'/api': create_api})
+)
