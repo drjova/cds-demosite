@@ -1,0 +1,24 @@
+# CDS (Experimental) docker build
+
+FROM python:3.5
+MAINTAINER CDS <cds.support@cern.ch>
+
+
+# Node.js, bower, less, clean-css, uglify-js, requirejs
+RUN apt-get update
+RUN apt-get -qy upgrade --fix-missing --no-install-recommends
+RUN apt-get -qy install --fix-missing --no-install-recommends curl
+RUN curl -sL https://deb.nodesource.com/setup_iojs_2.x | bash -
+RUN apt-get -qy install --fix-missing --no-install-recommends gcc git iojs
+
+# Slim down image
+RUN apt-get clean autoclean
+RUN apt-get autoremove -y
+RUN rm -rf /var/lib/{apt,dpkg}/
+RUN find /usr/share/doc -depth -type f ! -name copyright -delete
+RUN find /usr/share/doc -empty -delete
+RUN rm -rf /usr/share/man/* /usr/share/groff/* /usr/share/info/*
+
+# Basic Python and Node.js tools
+RUN pip install --upgrade pip setuptools ipython gunicorn
+RUN npm update && npm install --silent -g bower node-sass clean-css uglify-js requirejs
