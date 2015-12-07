@@ -1,0 +1,20 @@
+{%- extends "page.html" -%}
+{%- block page_body -%}
+  {{ super() }}
+  <div id="carousel-example-generic" class="carousel slide" data-ride="carousel">
+    <!-- Indicators -->
+    <ol class="carousel-indicators">
+      {% for rec in featured %}
+      <li data-target="#carousel-example-generic" data-slide-to="{{ loop.index }}"></li>
+      {% endfor %}
+    </ol>
+    <div class="carousel-inner" role="listbox">
+    {% for rec in featured %}
+      <div class="item active">
+        <img src="http://placehold.it/200x200" alt="..."/>
+        <div class="carousel-caption">{{rec.title}} - {{ rec.text }}</div>
+      </div>
+    {% endfor %}
+    </div>
+  </div>
+{%- endblock -%}

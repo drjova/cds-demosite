@@ -21,6 +21,8 @@
 
 from flask import Blueprint, current_app, render_template
 
+from cds.modules.frontend.api import get_featured
+
 from flask_menu import current_menu
 
 from invenio_base.i18n import _
@@ -61,4 +63,4 @@ def register_menu_items():
 @blueprint.route('')
 def home():
     """CDS Home page."""
-    return render_template('home.html')
+    return render_template('featured.html', featured=get_featured())

@@ -63,6 +63,7 @@ PACKAGES = [
     "cds.base",
     "cds.base.dojson.marc21",
     "cds.modules.personal_collection",
+    "cds.modules.frontend",
     "cds.modules.record_split",
     # Invenio packages
     'invenio_records',
@@ -83,7 +84,7 @@ PACKAGES = [
     'invenio_upgrader',
     'invenio_base',
     'invenio_knowledge',
-    'invenio_oaiharvester'
+    'invenio_oaiharvester',
     # 'invenio_comments',
     # 'invenio_messages',
     # 'invenio_deposit',
