@@ -45,23 +45,28 @@ def home():
     return render_template('cds_theme/home.html')
 
 
-@blueprint.route('/search')
-def search():
-    """CDS Search page."""
-    return render_template('cds_theme/search.html')
-
-
 @blueprint.route('/elastic', methods=['GET', 'POST'])
-@blueprint.route('/elastic/<index_name>', methods=['GET', 'POST'])
-@blueprint.route('/elastic/<index_name>/_search', methods=['GET', 'POST'])
-def elastic(index_name='cds'):
-    """CDS Home page."""
+def elastic():
+    """Search temporary API."""
     page = request.values.get('page', 1, type=int)
     size = request.values.get('size', 1, type=int)
     query = Query(request.values.get('q', ''))[(page-1)*size:page*size]
+    # dummy facets
+    query.body["aggs"] = {
+        "by_body": {
+            "terms": {
+                "field": "summary.summary"
+            }
+        },
+        "by_title": {
+            "terms": {
+                "field": "title_statement.title"
+            }
+        }
+    }
     response = current_search_client.search(
-        index=index_name,
-        doc_type=request.values.get('type', 'example'),
+        index=request.values.get('index', 'records'),
+        doc_type='record',
         body=query.body,
     )
     return jsonify(**response)

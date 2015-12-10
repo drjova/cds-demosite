@@ -175,8 +175,6 @@ setup(
         'invenio_assets.bundles': [
             'cds_theme_css = cds.modules.theme.bundles:css',
             'cds_theme_js = cds.modules.theme.bundles:js',
-            'cds_theme_home_js = cds.modules.theme.bundles:home',
-            'cds_theme_search_js = cds.modules.theme.bundles:search',
         ],
         'invenio_base.apps': [
             'invenio_search = invenio_search:InvenioSearch',

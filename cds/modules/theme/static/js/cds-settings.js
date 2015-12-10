@@ -26,7 +26,7 @@ require.config({
   paths: {
     angular: "node_modules/angular/angular",
     bootstrap: "node_modules/bootstrap-sass/assets/javascripts/bootstrap",
-    jquery: "node_modules/jquery/dist/jquery"
+    jquery: "node_modules/jquery/jquery",
   },
   shim: {
     angular: {
@@ -37,6 +37,6 @@ require.config({
     },
     jquery: {
       exports: "$"
-    }
+    },
   }
 })

@@ -31,7 +31,27 @@
 }
 
 .cds-navbar {
-  margin-bottom: 0px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid $brand-primary;
+  .flex {
+    display: flex;
+    flex-direction: row;
+  }
+  .item-1 {
+    flex-grow: 1;
+  }
+  .item-2 {
+    flex-grow: 30;
+  }
+  .invenio-search-navbar{
+    width: 100%;
+  }
+  .invenio-search-navbar .form-group {
+    width: 100%!important;
+  }
+  .invenio-search-navbar .form-control {
+    width: 100%!important;
+  }
 }
 
 .cds-searchbar-wrapper {

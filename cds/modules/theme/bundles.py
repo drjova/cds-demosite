@@ -36,7 +36,7 @@ css = NpmBundle(
     npm={
         "almond": "~0.3.1",
         "bootstrap-sass": "~3.3.5",
-        "font-awesome": "~4.4.0"
+        "font-awesome": "~4.4.0",
     }
 )
 
@@ -55,27 +55,5 @@ js = NpmBundle(
     npm={
         "almond": "~0.3.1",
         "angular": "~1.4.7",
-    }
-)
-
-home = NpmBundle(
-    'js/home/main.js',
-    filters='requirejs',
-    output="gen/cds.home.%(version)s.js",
-    npm={
-        "almond": "~0.3.1",
-        "angular": "~1.4.7",
-    }
-)
-
-search = NpmBundle(
-    'js/search/main.js',
-    filters='requirejs',
-    output="gen/cds.search.%(version)s.js",
-    npm={
-        "almond": "~0.3.1",
-        "angular": "~1.4.7",
-        # FIXME: ADD the proper angular elasticsearch dependencies
-        "elasticui": "latest",
     }
 )
