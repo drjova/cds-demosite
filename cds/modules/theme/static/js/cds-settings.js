@@ -24,9 +24,9 @@
 require.config({
   baseUrl: "/static/",
   paths: {
-    angular: "bower_components/angular/angular",
-    bootstrap: "bower_components/bootstrap-sass/assets/javascripts/bootstrap",
-    jquery: "bower_components/jquery/dist/jquery"
+    angular: "node_modules/angular/angular",
+    bootstrap: "node_modules/bootstrap-sass/assets/javascripts/bootstrap",
+    jquery: "node_modules/jquery/dist/jquery"
   },
   shim: {
     angular: {

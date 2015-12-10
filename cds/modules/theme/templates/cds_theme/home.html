@@ -2,18 +2,20 @@
 {%- extends "cds_theme/page.html" %}
 
 {%- block page_body -%}
-  <div class="container">
-    <div class="row">
-      <div class="col-md-12" ng-controller="homeController">
-        {%- raw %}
-          <div class="jumbotron">
-            <center>
-              <h1>{{hello}}</h1>
-              <p class="lead">Hello from angular {{time | date:'HH:mm:ss yyyy-MM-dd'}}.</p>
-              <a ng-click="updateTime()" class="btn btn-lg btn-primary">Update time</a>
-            </center>
-          </div>
-        {% endraw %}
+  <div id="cds-home">
+    <div class="container">
+      <div class="row">
+        <div class="col-md-12" ng-controller="homeController">
+          {%- raw %}
+            <div class="jumbotron">
+              <center>
+                <h1>{{hello}}</h1>
+                <p class="lead">Hello from angular {{time | date:'HH:mm:ss yyyy-MM-dd'}}.</p>
+                <a ng-click="updateTime()" class="btn btn-lg btn-primary">Update time</a>
+              </center>
+            </div>
+          {% endraw %}
+        </div>
       </div>
     </div>
   </div>

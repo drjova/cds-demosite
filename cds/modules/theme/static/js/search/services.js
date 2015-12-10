@@ -21,20 +21,33 @@
 * as an Intergovernmental Organization or submit itself to any jurisdiction.
 */
 
-// Setting the path to fonts files.
-$icon-font-path: "/static/node_modules/bootstrap-sass/assets/fonts/";
-$fa-font-path: "/static/node_modules/font-awesome/fonts";
+define([], function() {
+  var services = angular.module('cds.search.services', [])
+    .service('cdsLocalClient', ['$http', '$q', function($http, $q) {
+      return {
+        search: function(query, limit) {
+          var deferred = $q.defer();
+          deferred.notify('started');
+          $http({
+            method: 'POST',
+            url: '/elastic',
+            params: {
+              q: query,
+              size: limit || 20,
+            }
+          }).then(function(response) {
+              deferred.notify('finished');
+              deferred.resolve(response);
+            }, function (response) {
+              deferred.notify('error');
+              deferred.reject(response);
+          });
+          return deferred.promise;
+        }
+      };
+    }])
+    .service('parseElasticResults', ['$q', function($q) {
 
-// CDS Custom vars
-$cds-small-spacing: 5px;
-$cds-medium-spacing: 10px;
-$cds-large-spacing: 15px;
-$cds-enormus-spacing: 20px;
-
-// Brand colors CDS
-$brand-primary: #3498db;
-
-// Bliax, remove border radius
-$border-radius-small: 0;
-$border-radius-base: 0;
-$border-radius-large: 0;
+    }]);
+  return services;
+});

@@ -1,8 +1,42 @@
 {# -*- coding: utf-8 -*- -#}
-<div class="cds-searchbar-wrapper cds-bg-primary">
+<div id="cds-search" class="cds-searchbar-wrapper cds-bg-primary">
   <div class="container">
     <div class="row">
-      <div class="col-md-12"></div>
+      <div class="col-md-12">
+        {%- raw %}
+          <div ng-controller="searchController">
+            <form>
+              <div class="form-group">
+                <input
+                    class="form-control"
+                    type="text"
+                    ng-model="searchQuery"
+                    placeholder="Start typing"
+                    ng-change="search(searchQuery, searchLimit)"
+                    ng-model-options="{ debounce: { 'default': 500, 'blur': 0 } }"
+                />
+                <input type="hidden" ng-model="searchLimit" />
+              </div>
+            </form>
+            <p class="lead ng-hide" ng-show="results.data.hits.hits.length > 0">
+              <center>
+                {{results.data.hits.hits.length}}
+              </center>
+            </p>
+            <div class="ng-hide" ng-show="results.data.hits.hits.length == 0">
+              <center>
+                No results :(
+              </center>
+            </div>
+            <ul ng-show="results.data.hits.hits.length > 0" class="ng-hide">
+              <li ng-repeat="doc in results.data.hits.hits">
+                <h2>{{doc._source.title}}</h2>
+                {{doc._source.body}}
+              </li>
+            </ul>
+          </div>
+        {% endraw %}
+      </div>
     </div>
   </div>
 </div>

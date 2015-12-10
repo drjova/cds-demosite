@@ -21,16 +21,25 @@
 * as an Intergovernmental Organization or submit itself to any jurisdiction.
 */
 
-define([
-    'js/home/app'
-  ], function(app) {
+define([], function() {
+  var controllers = angular.module('cds.search.controllers', [])
+    .controller('searchController', [
+      '$scope',
+      'cdsLocalClient',
+       function($scope, cdsLocalClient) {
+        $scope.hello = 'Welcome to CDS Search';
+        $scope.notification = 'Welcome to CDS Search';
+        $scope.search = function(query, limit) {
+          cdsLocalClient.search(query)
+            .then(function(response) {
+              $scope.results = response;
+            }, function(error) {
+              $scope.hello = "ERROR";
+            }, function(update){
+              $scope.notification = $scope.notification + '<br />' + update;
+            });
+        };
 
-    app.controller('homeController', ['$scope', function($scope) {
-      $scope.hello = 'Welcome to CDS';
-      $scope.time = new Date();
-      $scope.updateTime = function() {
-        $scope.time = new Date();
-      };
-    }]);
-    return app;
+      }]);
+  return controllers;
 });

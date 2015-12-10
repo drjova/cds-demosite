@@ -22,14 +22,14 @@
 */
 
 require([
-    'js/home/controller',
+    'js/home/app',
   ], function(app) {
 
   // Initialize the app
   angular.element(document).ready(function() {
-    angular.bootstrap(document, ['myApp']);
+    angular.bootstrap(document.getElementById("cds-home"), ['cds.home']);
   });
 
   // Emit info
-  console.info('Hello world from CDS static files.');
+  console.info('Hello from cds search.');
 });

@@ -21,7 +21,12 @@
 * as an Intergovernmental Organization or submit itself to any jurisdiction.
 */
 
-define(['angular'], function (angular) {
-  var app = angular.module('myApp', []);
+define([
+    'node_modules/angular/angular',
+    'js/home/controllers'
+  ], function (angular) {
+  var app = angular.module('cds.home', [
+    'cds.home.controllers',
+  ]);
   return app;
 });

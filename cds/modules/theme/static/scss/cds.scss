@@ -24,11 +24,10 @@
 // any variable we need to override
 @import "variables";
 
-@import "../bower_components/bootstrap-sass/assets/stylesheets/_bootstrap";
-@import "../bower_components/font-awesome/scss/font-awesome";
+@import "../node_modules/bootstrap-sass/assets/stylesheets/_bootstrap";
+@import "../node_modules/font-awesome/scss/font-awesome";
 
 .cds-bg-primary {
-  background: $brand-primary;
 }
 
 .cds-navbar {
@@ -36,5 +35,9 @@
 }
 
 .cds-searchbar-wrapper {
+  padding: $cds-large-spacing;
   margin-bottom: $cds-enormus-spacing;
+  .form-group {
+    margin: 0;
+  }
 }
