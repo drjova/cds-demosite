@@ -1,6 +1,6 @@
 /*
  * This file is part of Invenio.
- * Copyright (C) 2015 CERN.
+ * Copyright (C) 2016 CERN.
  *
  * Invenio is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License as
@@ -21,19 +21,8 @@
 * as an Intergovernmental Organization or submit itself to any jurisdiction.
 */
 
-require([
-    'jquery',
-    'angular',
-    'js/cds/module'
-  ], function($, angular, cds) {
-    // On document ready bootstrap angular
-    angular.element(document).ready(function() {
-      angular.bootstrap(document, ['cds']);
-    });
-
-    // jQuery
-    $(document).ready(function() {
-      // Emit info
-      console.info('Hello world from CDS static files.');
-    });
+define(['js/cds/filters/module'], function(filters){
+  var app = angular.module('cds', ['cds.filters']);
+  // return the app
+  return app;
 });
