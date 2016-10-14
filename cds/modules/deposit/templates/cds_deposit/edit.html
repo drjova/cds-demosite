@@ -35,6 +35,7 @@
   </script>
   {% assets "invenio_deposit_dependencies_js" %}<script src="{{ ASSET_URL }}"></script>{% endassets %}
   <script type="text/javascript">
+    console.log('BASE_PATH', CKEDITOR_BASEPATH);
     angular.element(document).ready(function() {
       // Override templates
        app = angular.module('invenioRecords').config(['schemaFormDecoratorsProvider', function(decoratorsProvider){

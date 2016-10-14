@@ -27,6 +27,7 @@
 from __future__ import absolute_import, print_function
 
 import os
+<<<<<<< HEAD
 
 from invenio_deposit.config import (DEPOSIT_REST_FACETS,
                                     DEPOSIT_REST_SORT_OPTIONS)
