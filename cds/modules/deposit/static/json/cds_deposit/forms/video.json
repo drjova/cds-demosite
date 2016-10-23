@@ -2,7 +2,6 @@
   {
         "type": "fieldset",
         "title": "Video",
-
             "items": [
                 {
                     "title": "Name",
@@ -24,10 +23,6 @@
                         {
                             "title": "Name",
                             "key": "contributors[].name"
-                        },
-                        {
-                            "title": "Role",
-                            "key": "contributors[].role"
                         }
                     ]
                 },
@@ -50,8 +45,15 @@
                     ]
                 },
                 {
+                  "type": "template",
+                  "key": "date",
                   "title": "Date",
-                  "key": "date"
+                  "placeholder": "eg. 2013-05-08",
+                  "templateUrl": "/static/templates/cds_deposit/datepicker.html",
+                  "format": "yyyy-MM-dd",
+                  "description": "Required. Format: YYYY-MM-DD. In case your upload was already published elsewhere, please use the date of first publication.",
+                  "fa_cls": "fa-calendar",
+                  "required": true
                 },
                 {
                     "title": "License",

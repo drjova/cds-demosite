@@ -1,0 +1,82 @@
+<div ng-if="!$ctrl.masterInit">
+  <div class="well"
+    ngf-drag-over-class="'dragover'"
+    ngf-drop=""
+    ngf-change="$ctrl.initDeposit($newFiles)"
+    ngf-max-size="20GB"
+    ngf-multiple="true"
+  >
+    <center>
+      Drop files or folders here
+    </center>
+  </div>
+  <p class="text-center legend"><strong>— OR —</strong></p>
+  <p class="text-center">
+    <button  class="btn btn-primary"
+      ngf-max-size="20GB"
+      ngf-multiple="true"
+      ngf-select=""
+      ngf-change="$ctrl.initDeposit($newFiles)"
+    >
+      Click to select
+    </button>
+  </p>
+</div>
+
+<div ng-if="$ctrl.masterInit">
+
+  <div class="col-md-12">
+    <cds-deposit
+      master="true"
+      links="$ctrl.master.links"
+      update-record-after-success="true"
+      schema="{{ $ctrl.masterSchema }}"
+      record="$ctrl.master.metadata"
+    >
+    <cds-actions
+      template="/static/templates/cds_deposit/actions.html"
+    >
+    </cds-actions>
+    <cds-form
+      template="/static/templates/cds_deposit/form.html"
+      form="{{$ctrl.masterForm}}"
+    >
+    </cds-form>
+    <hr />
+    <!-- ADD children -->
+    <div id="{{child.metadata._deposit.id}}" ng-repeat="child in $ctrl.children">
+      <div class="well">
+        <cds-deposit
+          update-record-after-success="true"
+          links="child.links"
+          schema="{{ $ctrl.childrenSchema }}"
+          record="child.metadata"
+        >
+          <cds-actions
+            template="/static/templates/cds_deposit/actions.html"
+          >
+          </cds-actions>
+          <cds-form
+            template="/static/templates/cds_deposit/form.html"
+            form="{{$ctrl.childrenForm}}"
+          >
+          </cds-form>
+          <cds-uploader
+            files="child.files"
+            links="child.links"
+            template="/static/templates/cds_deposit/uploader.html"
+          ></cds-uploader>
+        </cds-deposit>
+      </div>
+    </div>
+    <hr />
+    <!-- ADD children -->
+    <cds-uploader
+      files="$ctrl.master.files"
+      links="$ctrl.master.links"
+      template="/static/templates/cds_deposit/uploader.html"
+    ></cds-uploader>
+    </cds-deposit>
+  </div>
+
+</div>

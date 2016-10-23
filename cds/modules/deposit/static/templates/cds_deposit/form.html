@@ -1,9 +1,10 @@
+<pre>{{ $ctrl.cdsDepositCtrl.record | json}}</pre>
 <div class="row">
     <div class="col-sm-12">
         <form
           name="$ctrl.depositForm"
           class="form-horizontal"
-          sf-schema="$ctrl.cdsDepositCtrl.schemaResolved"
+          sf-schema="$ctrl.cdsDepositCtrl.schema"
           sf-form="$ctrl.form"
           sf-model="$ctrl.cdsDepositCtrl.record"
           sf-options="{ formDefaults: { disableSuccessState: true, feedback: false}}"
