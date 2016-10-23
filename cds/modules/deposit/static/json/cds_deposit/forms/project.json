@@ -52,6 +52,7 @@
         "type": "array",
         "key": "contributors",
         "title": "Contributors",
+        "inline": true,
         "description": "",
         "sortOptions": {
           "axis": "y",
@@ -59,23 +60,14 @@
           "disabled": false,
           "handle": "i.sort-handle"
         },
-        "fa_cls": "fa-user",
         "required": true,
         "add": "Add another contributor",
         "inline": true,
         "minItems": 1,
         "items": [
           {
-            "type": "text",
             "key": "contributors[].name",
             "placeholder": "Name",
-            "description": "",
-            "notitle": true
-          },
-          {
-            "type": "uiselect",
-            "key": "contributors[].role",
-            "placeholder": "Role",
             "description": "",
             "notitle": true
           }

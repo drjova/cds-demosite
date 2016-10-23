@@ -37,7 +37,6 @@ blueprint = Blueprint(
     static_folder='static'
 )
 
-
 @blueprint.app_template_filter('tolinksjs')
 def to_links_js(pid, deposit=None):
     """Get API links."""

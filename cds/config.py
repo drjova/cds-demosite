@@ -421,6 +421,7 @@ DEPOSIT_DEFAULT_SCHEMAFORM = 'json/cds_deposit/forms/project.json'
 DEPOSIT_DEFAULT_JSONSCHEMA = 'deposits/records/project-v1.0.0.json'
 # Template for <invenio-records-form> directive
 DEPOSIT_UI_JSTEMPLATE_FORM = 'templates/cds_deposit/form.html'
+DEPOSIT_UI_JSTEMPLATE_ACTIONS = 'templates/cds_deposit/actions.html'
 DEPOSIT_SEARCH_API = '/api/deposits/'
 _CDSDeposit_PID = \
     'pid(depid,record_class="cds.modules.deposit.api:CDSDeposit")'
@@ -538,8 +539,22 @@ DEPOSIT_REST_ENDPOINTS = dict(
         max_result_window=10000,
     ),
 )
+
+
+def _view():
+    import ipdb; ipdb.set_trace()
+    from flask import render_template
+    return_template('cds_deposit/index.html')
+
 # Deposit UI endpoints
 DEPOSIT_RECORDS_UI_ENDPOINTS = {
+    'video_new': {
+        'pid_type': 'depid',
+        'route': '/deposit/video/new',
+        'template': 'cds_deposit/edit.html',
+        'record_class': 'cds.modules.deposit.api:CDSDeposit',
+       'view_imp': 'cds.config:_view'
+    },
     'depid': {
         'pid_type': 'depid',
         'route': '/deposit/<pid_value>',
@@ -565,3 +580,14 @@ DEPOSIT_RESPONSE_MESSAGES = dict(
         message="Edited succesfully."
     ),
 )
+# Depost UI forms
+DEPOSIT_FORM_TEMPLATES = {
+    'default': 'default.html',
+    'fieldset': 'fieldset.html',
+    'array': 'array.html',
+    'radios_inline': 'radios_inline.html',
+    'radios': 'radios.html',
+    'select': 'select.html',
+    'button': 'button.html',
+    'textarea': 'textarea.html',
+}

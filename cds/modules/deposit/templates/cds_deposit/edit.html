@@ -33,253 +33,433 @@
     // CKEDITOR static location
     window.CKEDITOR_BASEPATH = '{{url_for("static", filename="node_modules/ckeditor/", _external=True)}}';
   </script>
-  {% assets "invenio_deposit_dependencies_js" %}<script src="{{ ASSET_URL }}"></script>{% endassets %}
+  {% assets "cds_deposit_jquery_js" %}<script src="{{ ASSET_URL }}"></script>{% endassets %}
+  <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular.min.js"></script>
+  <script src="//ajax.googleapis.com/ajax/libs/angularjs/1.5.8/angular-sanitize.js"></script>
+  {% assets "cds_deposit_js" %}<script src="{{ ASSET_URL }}"></script>{% endassets %}
   <script type="text/javascript">
-    console.log('BASE_PATH', CKEDITOR_BASEPATH);
+
+
+    function cdsDepositsConfig($locationProvider) {
+      $locationProvider.html5Mode({
+        enabled: true,
+        requireBase: false,
+        rewriteLinks: false,
+      });
+    }
+
+    // Inject the necessary angular services
+    cdsDepositsConfig.$inject = ['$locationProvider'];
+
+    function cdsDeposits() {
+      return {
+        transclude: true,
+        bindings: {
+          id: '@',
+        },
+        controller: cdsDepositsCtrl,
+        template: "Deposit bucket {{deposits|length}}<div ng-transclude></div>"
+      };
+    }
+
+  function cdsDepositsCtrl($http, $q, $scope) {
+    var deposits = this.deposits = [];
+    var children = this.children = [];
+
+    this.addDeposits = function(deposit) {
+      this.deposits.push(deposit);
+    };
+
+    this.addChildren = function(children) {
+      this.children.push(children);
+    };
+
+    this.createDeposit = function(url, schema) {
+      return $http({
+        url: url,
+        method: 'POST',
+        data: {
+          $schema: schema
+        }
+      });
+    };
+
+    this.makeAction = function(url, method, payload) {
+      return $http({
+        url: url,
+        method: method,
+        data: payload
+      });
+    };
+
+    this.chainedActions = function(promises) {
+      var defer = $q.defer();
+      var data = [];
+      function _chain(fn) {
+        fn().then(
+          function(_data) {
+            data.push(_data);
+            if (promises.length > 0) {
+              return _chain(promises.shift());
+            } else {
+              defer.resolve(data);
+            }
+          }, function(error) {
+            defer.reject(error);
+          }
+        );
+      }
+      _chain(promises.shift());
+      return defer.promise;
+    };
+
+    this.JSONResolver = function(url) {
+      return $http.get(url);
+    };
+
+    // Meessages Success
+    $scope.$on('cds.deposit.success', function(evt, response) {
+      console.info('Success', response);
+    });
+    // Meessages Error
+    $scope.$on('cds.deposit.error', function(evt, response) {
+      console.info('Error', response);
+    });
+    // Loading Start
+    $scope.$on('cds.loading.start', function(evt) {
+      console.info('Loading started');
+    });
+    // Loading Stopped
+    $scope.$on('cds.loading.end', function(evt) {
+      console.info('Loading stopped');
+    });
+  }
+
+  function cdsDeposit() {
+    return {
+      transclude: true,
+      bindings: {
+        id: '@',
+        master: '@',
+        updateWindowLocation: '@',
+        updateRecordAfterSuccess: '@',
+        updateLinksAfterSuccess: '@',
+        updatePayloadWithSchema: '@',
+        schema: '@',
+        record: '<',
+        init: '@',
+        links: '<',
+        forms: "@",
+      },
+      require: {
+        cdsDepositsCtrl: '^cdsDeposits'
+      },
+      controller: function($http, $q, $location, $scope, $window) {
+        var that = this;
+        var forms = this.forms = [];
+
+        // When first initialized
+        this.$onInit = function() {
+          // Register this deposit to the master
+          this.cdsDepositsCtrl.addDeposits(this);
+          // Register the deposit forms
+          this.addForm = function(form) {
+            this.forms.push(form);
+          }
+          // Resolve the record schema
+          this.cdsDepositsCtrl.JSONResolver(this.schema)
+            .then(function(response) {
+              that.schemaResolved = response.data;
+            });
+        };
+
+        // Check if deposit exists and create it if need it
+        this.checkForDeposit = function() {
+          var defer = $q.defer();
+          if (this.init) {
+            this.cdsDepositsCtrl
+              .createDeposit(that.init, that.schema)
+              .then(function(response) {
+                that.links = response.data.links;
+                that.init = undefined;
+                // Update model with the schema?
+                if (that.updatePayloadWithSchema === undefined) {
+                  that.record.$schema = that.schema;
+                }
+                defer.resolve(response);
+              });
+          } else {
+            defer.resolve({});
+          }
+          return defer.promise;
+        };
+
+        this.guessEndpoint = function(endpoint) {
+          if (Object.keys(that.links).indexOf(endpoint) > -1) {
+            return that.links[endpoint];
+          }
+          return endpoint;
+        };
+
+        this.handleRedirect = function(url, replace) {
+          if (!angular.isUndefined(url) && url !== '') {
+            if (replace) {
+              // ¯\_(ツ)_/¯ https://github.com/angular/angular.js/issues/3924
+              var parser = document.createElement('a');
+              parser.href = url;
+              $location.url(parser.pathname);
+              $location.replace();
+            } else {
+              $window.location.href = url;
+            }
+          }
+        }
+
+        // Do a single action at once
+        this.makeSingleAction = function(endpoint, method, redirect) {
+          // Guess the endpoint
+          var url = this.guessEndpoint(endpoint);
+          return this.cdsDepositsCtrl
+            .makeAction(url, method, that.record);
+        }
+
+        // Do multiple actions at once
+        this.makeMultipleActions = function(actions, redirect) {
+          var promises = [];
+          angular.forEach(actions, function(action, index) {
+            var url = that.guessEndpoint(action[0]);
+            this.push(function() {
+              return that.cdsDepositsCtrl.makeAction(url, action[1], that.record);
+            });
+          }, promises);
+          return that.cdsDepositsCtrl.chainedActions(promises);
+        }
+
+        this.postSuccessProcess = function(responses) {
+          // Get only the latest response (in case of multiple actions)
+          var response = (responses[responses.length - 1] || responses).data;
+          // Update record
+          if (this.updateRecordAfterSuccess) {
+            this.record = response.metadata;
+          }
+          // Update links
+          if (this.updateLinksAfterSuccess) {
+            this.links = response.links;
+          }
+          // Update the window location (only for master deposits)
+          if (this.updateWindowLocation) {
+            if (!angular.isUndefined(this.links.html)) {
+              this.handleRedirect(this.links.html, true);
+            }
+          }
+        }
+
+        this.postErrorProcess = function(responses) {
+          // Process errors
+        }
+
+        this.onSuccessAction = function(response) {
+          // Post success process
+          that.postSuccessProcess(response);
+          // Inform the parents
+          $scope.$emit('cds.deposit.success', response);
+        }
+
+        this.onErrorAction = function(response) {
+          // Post error process
+          that.postErrorProcess(response);
+          // Inform the parents
+          $scope.$emit('cds.deposit.error', response);
+        }
+      },
+      template: "<div ng-transclude></div>"
+    };
+  }
+
+  function cdsForm() {
+    return {
+      bindings: {
+        id: '=',
+        form: '@',
+        formTemplates: '=',
+        formTemplatesBase: '@',
+      },
+      require: {
+        cdsDepositCtrl: '^cdsDeposit'
+      },
+      controller: function($http, schemaFormDecorators) {
+        var that = this;
+        this.$onInit = function() {
+          this.status = this.depositForm;
+          // Store the parent id
+          this.parent_id = this.cdsDepositCtrl.id;
+          // Resolve the form schema
+          this.cdsDepositCtrl.cdsDepositsCtrl.JSONResolver(this.form)
+            .then(function(response) {
+              that.form = response.data;
+              that.cdsDepositCtrl.addForm(that.depositForm);
+            });
+        };
+      },
+      templateUrl: function($element, $attrs) {
+        return $attrs.template;
+      }
+    }
+  }
+
+  function cdsActions() {
+    return {
+      bindings: {
+      },
+      require: {
+        cdsDepositCtrl: '^cdsDeposit'
+      },
+      controller: function() {
+        var that = this;
+        this.$onInit = function() {
+        this.actionHandler = function(type, method) {
+          this.cdsDepositCtrl.checkForDeposit()
+            .then(function(){
+              that.cdsDepositCtrl.makeSingleAction(type, method)
+                .then(
+                  that.cdsDepositCtrl.onSuccessAction,
+                  that.cdsDepositCtrl.onErrorAction
+                );
+            });
+          }
+          this.actionMultipleHandler = function(actions) {
+            this.cdsDepositCtrl.checkForDeposit()
+              .then(function(){
+                that.cdsDepositCtrl.makeMultipleActions(actions)
+                .then(
+                  that.cdsDepositCtrl.onSuccessAction,
+                  that.cdsDepositCtrl.onErrorAction
+                );
+              });
+          }
+        }
+      },
+      templateUrl: function($element, $attrs) {
+        return $attrs.template;
+      }
+    }
+  }
+
+  function cdsUploader() {
+    return {
+      bindings: {
+        master: "@"
+      },
+      require: {
+        cdsDepositCtrl: '^cdsDeposit'
+      },
+      controller: function(InvenioFilesAPI, InvenioFilesUploaderModel) {
+        var that = this;
+        var files = this.files = [];
+        this.$onInit = function() {
+          this.addFiles = function(files) {
+            angular.forEach(files, function(file) {
+              if (that.master) {
+                that.cdsDepositCtrl.handleChildrenFiles(file);
+              } else {
+                that.files.push(file);
+              }
+            });
+          }
+        };
+      },
+      templateUrl: function($element, $attrs) {
+        return $attrs.template;
+      }
+    }
+  }
+
+  function cdsChildren() {
+    return {
+      bindings: {
+        master: "@"
+      },
+      require: {
+        cdsDepositCtrl: '^cdsDeposit'
+      },
+      controller: function() {
+        var that = this;
+
+        this.$onInit = function() {
+          this.cdsDepositCtrl.handleChildrenFiles = function(file) {
+            that.cdsDepositCtrl.cdsDepositsCtrl
+              .createDeposit(that.init, that.schema)
+              .then(function(response) {
+                console.log('THE NEW VIDEO', response);
+                that.cdsDepositCtrl.cdsDepositsCtrl.addChildren(response);
+              });
+          }
+        };
+      },
+      templateUrl: function($element, $attrs) {
+        return $attrs.template;
+      }
+    }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     angular.element(document).ready(function() {
-       // Override templates
-       app = angular.module('invenioRecords').config(['schemaFormDecoratorsProvider', function(decoratorsProvider){
+
+      angular.module('cdsDeposit', [
+        'schemaForm', 'mgcrea.ngStrap',
+        'mgcrea.ngStrap.modal', 'pascalprecht.translate', 'ui.sortable',
+        'ui.select', 'mgcrea.ngStrap.select', 'mgcrea.ngStrap.datepicker',
+        'mgcrea.ngStrap.helpers.dateParser', 'mgcrea.ngStrap.tooltip', 'invenioFiles'
+      ])
+      .config(cdsDepositsConfig)
+      .component('cdsDeposits', cdsDeposits())
+      .component('cdsDeposit', cdsDeposit())
+      .component('cdsForm', cdsForm())
+      .component('cdsUploader', cdsUploader())
+      .component('cdsChildren', cdsChildren())
+      .component('cdsActions', cdsActions());
+
+       app = angular.module('cdsDeposit').config(['schemaFormDecoratorsProvider', function(decoratorsProvider){
          decoratorsProvider.addMapping('bootstrapDecorator', 'ckeditor', '{{ url_for("static", filename="templates/cds_deposit/ckeditor.html")}}');
          decoratorsProvider.addMapping('bootstrapDecorator', 'uiselect', '{{ url_for("static", filename="templates/cds_deposit/uiselect.html")}}');
+         decoratorsProvider.addMapping('bootstrapDecorator', 'fieldset', '{{ url_for("static", filename="node_modules/invenio-records-js/dist/fieldset.html")}}');
+         {%- for key, value in config.DEPOSIT_FORM_TEMPLATES.iteritems() -%}
+          {%- set file = "%s/%s"|format(config.DEPOSIT_FORM_TEMPLATES_BASE, value) -%}
+          decoratorsProvider.addMapping('bootstrapDecorator', '{{key}}', '{{ url_for("static", filename=file) }}');
+         {%- endfor -%}
        }]);
-       angular.module('schemaForm')
-        .controller('invenioDynamicSelectController', ['$scope', '$controller',
-          function ($scope, $controller) {
-            $controller('dynamicSelectController', {$scope: $scope});
-            // If it is ui-select inside an array...
-            if ($scope.modelArray) {
-              $scope.$watchCollection('modelArray', function(newValue) {
-                // If this is not the initial setting of the element...
-                if (!angular.equals($scope.select_model, {})) {
-                  // Get the element's correct value from the array model
-                  var value = $scope.modelArray[$scope.arrayIndex][$scope.form.key.slice(-1)[0]];
-                  // Set ui-select's model to the correct value if needed
-                  if ($scope.insideModel !== value) {
-                    $scope.insideModel = value;
-                    var query = $scope.$eval($scope.form.options.processQuery || 'query', {query: value});
-                    $scope.populateTitleMap($scope.form, query);
-                    $scope.select_model.selected = $scope.find_in_titleMap(value);
-                  }
-                }
-              });
-            }
-      }]);
-      app.directive('tooltip', function(){
-            return {
-                restrict: 'A',
-                link: function(scope, element, attrs){
-                    $(element).hover(function(){
-                        // on mouseenter
-                        $(element).tooltip('show');
-                    }, function(){
-                        // on mouseleave
-                        $(element).tooltip('hide');
-                    });
-                }
-            };
-        });
-        app.filter('fieldtitle', function(){
-          return function(fieldname, schemaform) {
-            if (!fieldname){
-              return null;
-            }
-            var parts = fieldname.split('.');
-            parts.shift(); // pop metadata
-            var title = null;
-            for (var i = 0; i < schemaform.length && parts.length != 0; i++) {
-              var set = schemaform[i];
-              for (var j = 0; j < set.items.length && parts.length != 0; j++) {
-                var field = set.items[j];
-                if(field && field.type != "section" && field.key && field.key[0] == parts[0] ){
-                  if(field.title) {
-                      title = field.title;
-                  }
-                  parts.shift();
-                }
-              }
-            }
-            return title;
-          };
-        });
-        // Excludes items from an array if they exist in some other array
-        app.filter('notIn', function($filter){
-          return function(srcArray, filterArray, srcKey, filterKey){
-            if(srcArray && srcArray.length && filterArray && filterArray.length){
-              return $filter('filter')(srcArray, function(srcItem){
-                return !filterArray.some(function(filterItem) {
-                  srcValue = srcKey ? srcItem[srcKey] : srcItem;
-                  filterValue = filterKey ? filterItem[filterKey] : filterItem;
-                  return srcValue === filterValue;
-                });
-              });
-            }
-            return srcArray;
-          }
-        });
-      angular.module('cdsDeposit', [
-          'invenioRecords', 'schemaForm', 'mgcrea.ngStrap',
-           'mgcrea.ngStrap.modal', 'pascalprecht.translate', 'ui.sortable',
-           'ui.select', 'mgcrea.ngStrap.select', 'mgcrea.ngStrap.datepicker',
-           'mgcrea.ngStrap.helpers.dateParser', 'mgcrea.ngStrap.tooltip',
-           'invenioFiles'
-      ])
-      .directive('cdsRecordsChild', function() {
-        return {
-          restrict: 'E',
-          link: function(scope, element, attrs) {
-            scope.saveVideo = function() {
-              scope.commitVideo(scope.child.metadata, scope.child.links.self);
-            };
-            scope.recordsVM.invenioRecordsModel['$schema'] = 'http://localhost:5000/schemas/deposits/records/video-v1.0.0.json';
-            setTimeout(function() {
-              scope.$broadcast('invenio.uploader.init',
-                  {},
-                  {initialization: scope.child.links.self},
-                  [],
-                  scope.child.links);
-            }, 0);
-          },
-          scope: {
-            child: '=',
-            links: '=',
-            filesSchema: '=',
-            filesForm: '=',
-            commitVideo: '='
-          },
-        {% raw %}
-          template: '<invenio-records form="/static/json/cds_deposit/video_form.json" initialization="{{ links.self }}" links="{{ links | json }}" record="{{ child.metadata | json }}" schema="{{ child.metadata[\'$schema\'] }}">' +
-          '<form sf-model="child.metadata" sf-schema="filesSchema" sf-form="filesForm"></form>' +
-          '</invenio-records>'
-        {% endraw %}
-        };
-      })
-      .directive('cdsRecordsChildren', function($rootScope, $q, $http) {
-        return {
-          restrict: 'E',
-          link: function(scope, element, attrs) {
-            var unmatchedFiles = [];
 
-            var videoRegex = /(.*)\.(mp4|mov)$/;
-            var isVideoFile = function(filename) {
-              return !!filename.match(videoRegex);
-            };
-
-            var getVideoName = function(filename) {
-              return filename.match(videoRegex)[1];
-            };
-
-            var fileBelongsToVideo = function(file, videoName) {
-              return file.key.startsWith(videoName);
-            };
-
-            var videosMap = null;
-
-            var commitVideo = function(video, link) {
-              link = link || video.links.self;
-              $http({
-                url: link,
-                method: 'PUT',
-                headers: $rootScope.recordsVM.invenioRecordsArgs.headers,
-                data: video
-              });
-            };
-
-            scope.commitVideo = commitVideo;
-
-            var actionHandler = scope.recordsVM.actionHandler;
-            scope.recordsVM.actionHandler = function() {
-              angular.forEach(videosMap || {}, function(video) {
-                commitVideo(video.metadata, video.links.self);
-              });
-              return actionHandler.apply(this, arguments);
-            };
-
-            var addFileToVideos = function(file, videosMap) {
-              var isVideo = isVideoFile(file.key);
-              if (isVideo) {
-                return $http({
-                  method: 'POST',
-                  url: $rootScope.recordsVM.invenioRecordsArgs.initialization,
-                  data: {},
-                  headers:  $rootScope.recordsVM.invenioRecordsArgs.headers || {}
-                }).then(function(response) {
-                  var videoName = getVideoName(file.key);
-                  videosMap[videoName] = response.data;
-                  videosMap[videoName].metadata.files = [ file ];
-                  videosMap[videoName].metadata.parent = $rootScope.recordsVM.invenioRecordsModel._deposit.id;
-                  unmatchedFiles.filter(function(file) {
-                    return fileBelongsToVideo(file, videoName);
-                  }).forEach(function(file) {
-                    unmatchedFiles.splice(unmatchedFiles.indexOf(file), 1);
-                    videosMap[videoName].metadata.files.push(file);
-                  });
-                  return videoName;
-                });
-              } else {
-                for (var key in videosMap) {
-                  if (fileBelongsToVideo(file, key)) {
-                    videosMap[key].metadata.files.push(file);
-                    return $q.resolve(key);
-                  }
-                }
-                unmatchedFiles.push(file);
-                return $q.resolve();
-              }
-            };
-            $rootScope.$on('invenio.uploader.file.added', function(evt, newFiles) {
-              if (videosMap == null) {
-                videosMap = ($rootScope.recordsVM.invenioRecordsVideos || [])
-                    .reduce(function(map, video) {
-                      video.metadata.files.forEach(function(file) {
-                        var isVideo = isVideoFile(file.key);
-                        if (isVideo) {
-                          var videoName = getVideoName(file.key);
-                          map[videoName] = video;
-                        }
-                      });
-                      return map;
-                    }, {});
-              }
-              var promises = newFiles.map(function(file) {
-                return addFileToVideos(file, videosMap);
-              });
-              $q.all(promises).then(function(filenames) {
-                var uniqFiles = filenames.filter(function (v, i, a) {
-                  return v && a.indexOf(v) === i
-                });
-                uniqFiles.forEach(function(name) {
-                  var video = videosMap[name];
-                  commitVideo(video.metadata, video.links.self);
-                });
-                // commit master record
-                var videoArray = [];
-                for (var name in videosMap) {
-                  videoArray.push(videosMap[name]);
-                }
-                $rootScope.recordsVM.invenioRecordsVideos = videoArray;
-              });
-            });
-            $http.get(attrs['schema']).then(function(response) {
-              scope.filesSchema = response.data;
-            });
-            $http.get(attrs['form']).then(function(response) {
-              scope.filesForm = response.data;
-            });
-          },
-          {% raw %}
-          template: '<div ng-repeat="video in recordsVM.invenioRecordsVideos track by $index">' +
-          '<cds-records-child child="video" links="video.links" files-schema="filesSchema" files-form="filesForm" commit-video="commitVideo"></cds-records-child>' +
-          '</div>',
-          {% endraw %}
-          controller: 'InvenioRecordsCtrl',
-          controllerAs: 'InvenioRecordsVideosCtrl'
-        };
-      });
       angular.bootstrap(
-          document.getElementById('invenio-records'), ['cdsDeposit']
+        document.getElementById('cds-deposit'), ['cdsDeposit']
       );
     });
-
   </script>
 {%- endblock javascript %}
 
@@ -287,56 +467,38 @@
   <div class="container">
     <div class="row">
       <div class="col-md-12">
-        <div id="invenio-records">
-          <invenio-records
+        <div id="cds-deposit">
+        <cds-deposits>
+          <cds-deposit
+            master="true"
+            update-window-location="true"
+            update-record-after-success="true"
             {% if pid %}
-              initialization="{{ config.DEPOSIT_RECORDS_API.format(pid_value=pid.pid_value) }}"
               links='{{pid|tolinksjs(record)|tojson}}'
             {% else %}
-              initialization="{{ config.DEPOSIT_SEARCH_API }}"
+              init="{{ config.DEPOSIT_SEARCH_API }}"
             {% endif %}
-            template-params='{"messages": {{ config.DEPOSIT_RESPONSE_MESSAGES|tojson }} }'
-            extra-params='{"headers":{"Content-Type": "application/json"}, "data": {"$schema": "{{ url_for("invenio_jsonschemas.get_schema", schema_path=config.DEPOSIT_DEFAULT_JSONSCHEMA, _external=True) }}"}, "initialization": "{{ config.DEPOSIT_SEARCH_API }}"}'
-            form="{{ url_for('static', filename=config.DEPOSIT_DEFAULT_SCHEMAFORM) }}"
             record='{{ record | tojson }}'
-            schema="{{ url_for('invenio_jsonschemas.get_schema', schema_path=config.DEPOSIT_DEFAULT_JSONSCHEMA) }}">
-            <invenio-records-loading
-              template="{{ url_for('static', filename='node_modules/invenio-records-js/dist/templates/loading.html') }}">
-            </invenio-records-loading>
-            <invenio-records-alert
-              template="{{ url_for('static', filename='templates/cds_deposit/alert.html') }}">
-            </invenio-records-alert>
-            <invenio-records-actions
-              template="{{ url_for('static', filename=config.DEPOSIT_UI_JSTEMPLATE_ACTIONS) }}">
-            </invenio-records-actions>
-            <invenio-records-form
-              form-templates='{{ config.DEPOSIT_FORM_TEMPLATES | tojson }}'
-              form-templates-base="{{ url_for('static', filename=config.DEPOSIT_FORM_TEMPLATES_BASE) }}"
-              template="{{ url_for('static', filename=config.DEPOSIT_UI_JSTEMPLATE_FORM) }}">
-            </invenio-records-form>
-          <cds-records-children
-            schema="/schemas/deposits/records/video-v1.0.0.json"
-            form="/static/json/cds_deposit/video_form.json">
-          </cds-records-children>
-          </invenio-records>
-          <invenio-files-uploader
-            method="PUT"
-            endpoint="{{config.DEPOSIT_FILES_API}}"
-            {% if pid %}
-              initialization="{{ config.DEPOSIT_RECORDS_API.format(pid_value=pid.pid_value) }}"
-              links='{{pid|tolinksjs(record)|tojson}}'
-            {% else %}
-              initialization="{{ config.DEPOSIT_SEARCH_API }}"
-            {% endif %}
-            files='{{record|tofilesjs|tojson}}'
+            schema="{{ url_for('invenio_jsonschemas.get_schema', schema_path=config.DEPOSIT_DEFAULT_JSONSCHEMA, _external=True) }}"
           >
-            <invenio-files-upload-zone
-              template="{{ url_for('static', filename='node_modules/invenio-files-js/dist/templates/upload.html') }}">
-            </invenio-files-upload-zone>
-            <invenio-files-list
-              template="{{ url_for('static', filename='node_modules/invenio-files-js/dist/templates/list.html') }}"
-            ></invenio-files-list>
-        </invenio-files-uploader>
+            <cds-actions template="{{ url_for('static', filename=config.DEPOSIT_UI_JSTEMPLATE_ACTIONS) }}"></cds-actions>
+            <cds-form
+              template="{{ url_for('static', filename=config.DEPOSIT_UI_JSTEMPLATE_FORM) }}"
+              form="{{ url_for('static', filename=config.DEPOSIT_DEFAULT_SCHEMAFORM) }}"
+            >
+            </cds-form>
+            <cds-uploader
+              master="true"
+              template="{{ url_for('static', filename='templates/cds_deposit/uploader.html') }}"
+            ></cds-uploader>
+            <cds-children
+              init="{{ config.DEPOSIT_SEARCH_API }}"
+              schema="http://localhost:5000/schemas/deposits/records/video-v1.0.0.json"
+              update-record-after-success="true"
+              template="{{ url_for('static', filename='templates/cds_deposit/children.html') }}"
+            ></cds-children>
+          </cds-deposit>
+        </cds-deposits>
         </div>
       </div>
     </div>
