@@ -1,4 +1,4 @@
-<div ng-if="!$ctrl.masterInit">
+<div ng-if="!$ctrl.initialized">
   <div class="well"
     ngf-drag-over-class="'dragover'"
     ngf-drop=""
@@ -23,7 +23,7 @@
   </p>
 </div>
 
-<div ng-if="$ctrl.masterInit">
+<div ng-if="$ctrl.initialized">
 
   <div class="col-md-12">
     <cds-deposit
@@ -63,7 +63,6 @@
           </cds-form>
           <cds-uploader
             files="child.files"
-            links="child.links"
             template="/static/templates/cds_deposit/uploader.html"
           ></cds-uploader>
         </cds-deposit>
@@ -73,7 +72,6 @@
     <!-- ADD children -->
     <cds-uploader
       files="$ctrl.master.files"
-      links="$ctrl.master.links"
       template="/static/templates/cds_deposit/uploader.html"
     ></cds-uploader>
     </cds-deposit>

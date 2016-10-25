@@ -63,73 +63,64 @@
           .then(function(response) {
             that.master = response.data;
             // FIXME: resolve all the children
-            that.masterInit = true;
+            that.initialized = true;
           });
       }
     }
 
-    this.fileReducer = function(file) {
-     return {
-       key: file.name,
-       uri: false,
-     };
-    }
-
-    this.reducer = function(deposit, files) {
-      angular.forEach(this.fileReducer(files), function(value, key) {
-         files[key] = value;
-       });
-      return angular.merge(
-        {},
-        deposit,
-        {
-          files: [files]
-        }
-      );
-    }
-
     this.addMaster = function(deposit, files) {
-      if (!this.masterInit) {
-        this.master = this.reducer(deposit, files);
-        this.masterInit = true;
+      if (!this.initialized) {
+        if (files) {
+          deposit.files = [files];
+        };
+        this.master = deposit;
+        // Initialized
+        this.initialized = true;
         if (this.master.links.html) {
           this.handleRedirect(this.master.links.html, true);
         }
       };
     };
 
-    this.addChildren = function(deposit, files) {
-      this.children.push(
-        this.reducer(deposit, files)
-      );
+    this.addChildren = function(deposit, file) {
+      deposit.files = [file];
+      console.log('Children', deposit);
+      this.children.push(deposit);
     };
 
     this.initDeposit = function(files) {
       // add some proper logic to dinstiguish files
       // first create master
-      this.createDeposit(this.init, this.masterSchema)
+      this.createDeposit(this.masterInit, this.masterSchema)
         .then(function(response) {
           // Create the master
-          that.addMaster(response.data, files.pop());
+          that.addMaster(response.data);
           var master_id = response.data.metadata._deposit.id;
           // for each files create child
           angular.forEach(files, function(file, index) {
-            that.createDeposit(that.init, that.childrenSchema)
+            that.createDeposit(
+              that.childrenInit,
+              that.childrenSchema,
+              {_project_id: master_id}
+            )
               .then(function(response) {
-                response.data.metadata._deposit.project_id = master_id;
+                file.key = file.name;
                 that.addChildren(response.data, file);
               });
           });
         });
     }
 
-    this.createDeposit = function(url, schema) {
+    this.createDeposit = function(url, schema, extra) {
+      var data = angular.merge(
+        {},
+        {$schema: schema},
+        extra || {}
+      );
       return $http({
         url: url,
         method: 'POST',
-        data: {
-          $schema: schema
-        }
+        data: data
       });
     };
 
@@ -202,12 +193,13 @@
     return {
       transclude: true,
       bindings: {
-        init: '@',
         // master related
+        masterInit: '@',
         masterLinks: '<',
         masterSchema: '@',
         masterForm: '@',
         // children related
+        childrenInit: '@',
         childrenForm: '@',
         childrenSchema: '@',
         // general template base
@@ -252,21 +244,34 @@
           return endpoint;
         };
 
+        this.cleanData = function(data, unwanted) {
+          var _unwantend = unwanted || [[null], [{}], '', [undefined]];
+          angular.forEach(data, function(value, key) {
+            angular.forEach(_unwantend, function(_value) {
+              if (angular.equals(_value, value))  {
+                delete data[key];
+              }
+            });
+          });
+          return data;
+        }
+
         // Do a single action at once
         this.makeSingleAction = function(endpoint, method, redirect) {
           // Guess the endpoint
           var url = this.guessEndpoint(endpoint);
           return this.cdsDepositsCtrl
-            .makeAction(url, method, that.record);
+            .makeAction(url, method, that.cleanData(that.record));
         }
 
         // Do multiple actions at once
         this.makeMultipleActions = function(actions, redirect) {
           var promises = [];
+          var cleanRecord = that.cleanData(that.record);
           angular.forEach(actions, function(action, index) {
             var url = that.guessEndpoint(action[0]);
             this.push(function() {
-              return that.cdsDepositsCtrl.makeAction(url, action[1], that.record);
+              return that.cdsDepositsCtrl.makeAction(url, action[1], cleanRecord);
             });
           }, promises);
           return that.cdsDepositsCtrl.chainedActions(promises);
@@ -366,22 +371,92 @@
     return {
       bindings: {
         files: '=',
-        links: '=',
       },
       require: {
         cdsDepositCtrl: '^cdsDeposit'
       },
-      controller: function(InvenioFilesAPI, InvenioFilesUploaderModel) {
+      controller: function($q, Upload) {
         var that = this;
+        // Files
+        var queue = this.queue = [];
+        var errors = this.errors = [];
+
         this.$onInit = function() {
-          that.filesJS = JSON.stringify(that.files);
-          that.linksJS = JSON.stringify(that.links);
-          this.addFiles = function(files) {
-            angular.forEach(files, function(file) {
-              that.files.push(file);
-            });
+          that.queue.push(that.files);
+          this.prepare = function(file) {
+            console.log('PREPARE', file);
+            var args = {
+              url: that.cdsDepositCtrl.links.bucket + '/' + file.key,
+              method: 'PUT',
+              headers: {
+                'Content-Type': (file.type || '').indexOf('/') > -1 ? file.type : ''
+              },
+              data: file
+            };
+            return args;
+          }
+
+
+          this.uploader = function() {
+            var defer = $q.defer();
+            var data = [];
+            function _chain(upload) {
+              var args = that.prepare(upload);
+              Upload.http(args)
+                .then(
+                  function success(response) {
+                    console.log('Finish with file', response);
+                  },
+                  function error(response) {
+                    console.log('Error', response);
+                    defer.reject(response);
+                  },
+                  function progress(evt) {
+                    var progress = parseInt(100.0 * evt.loaded / evt.total, 10);
+                    that.files[_.indexOf(that.files, evt.config.data)].progress = progress;
+                  }
+                )
+                .finally(function finish(evt) {
+                  if (that.queue.length > 0) {
+                    return _chain(that.queue.shift());
+                  } else {
+                    defer.resolve({});
+                  };
+                });
+            }
+            _chain(that.queue.shift());
+            return defer.promise;
+          }
+
+          this.upload = function() {
+            if (that.queue.length > 0) {
+              that.uploader()
+                .then(
+                  function done() {
+                    console.log('ALL DONE');
+                  },
+                  function error() {
+                    console.log('ERROR ALL DONE');
+                  }
+                );
+            }
+
           }
         };
+
+        this.addFiles = function(_files) {
+          angular.forEach(_files, function(file, index) {
+              file.key = file.name;
+              // Add the file to the list
+              that.files.push(file);
+              // Add the file to the queue
+              that.queue.push(file);
+          });
+        };
+
+        this.abort = function() {
+
+        }
       },
       templateUrl: function($element, $attrs) {
         return $attrs.template;
@@ -423,7 +498,8 @@
         'schemaForm', 'mgcrea.ngStrap',
         'mgcrea.ngStrap.modal', 'pascalprecht.translate', 'ui.sortable',
         'ui.select', 'mgcrea.ngStrap.select', 'mgcrea.ngStrap.datepicker',
-        'mgcrea.ngStrap.helpers.dateParser', 'mgcrea.ngStrap.tooltip', 'invenioFiles'
+        'mgcrea.ngStrap.helpers.dateParser', 'mgcrea.ngStrap.tooltip', 'ngFileUpload',
+        'invenioFiles.filters'
       ])
       .config(cdsDepositsConfig)
       .component('cdsDeposits', cdsDeposits())
@@ -451,18 +527,24 @@
 
 {%- block page_body %}
 
-  <div class="container">
+  <div class="container-fluid">
     <div class="row">
-      <div class="col-md-12">
+      <div class="col-md-2">
+        <div class="panel panel-default">
+          TEST
+        </div>
+      </div>
+      <div class="col-md-10">
         <div id="cds-deposit">
         <cds-deposits
             {% if pid %}
               master-links='{{pid|tolinksjs(record)|tojson}}'
             {% else %}
-              init="{{ config.DEPOSIT_SEARCH_API }}"
+              master-init="/api/deposits/project/"
             {% endif %}
             master-schema="{{ url_for('invenio_jsonschemas.get_schema', schema_path=config.DEPOSIT_DEFAULT_JSONSCHEMA, _external=True) }}"
             master-form="{{ url_for('static', filename=config.DEPOSIT_DEFAULT_SCHEMAFORM) }}"
+            children-init="/api/deposits/video/"
             children-schema="http://localhost:5000/schemas/deposits/records/video-v1.0.0.json"
             children-form="http://localhost:5000/static/json/cds_deposit/forms/video.json"
             template="{{ url_for('static', filename='templates/cds_deposit/deposits.html') }}"

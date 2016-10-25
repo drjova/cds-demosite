@@ -27,24 +27,6 @@
                     ]
                 },
                 {
-                    "title": "Keywords",
-                    "key": "keywords",
-                    "add": "Add another Keyword",
-                    "style": {
-                        "add": "btn-warning"
-                    },
-                    "items":[
-                        {
-                            "title": "Source",
-                            "key": "keywords[].source"
-                        },
-                        {
-                            "title": "Value",
-                            "key": "keywords[].value"
-                        }
-                    ]
-                },
-                {
                   "type": "template",
                   "key": "date",
                   "title": "Date",

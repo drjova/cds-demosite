@@ -42,6 +42,7 @@ PRESERVE_FIELDS = (
     '_deposit',
     '_buckets',
     '_files',
+    'videos',
 )
 
 current_jsonschemas = LocalProxy(
@@ -104,13 +105,13 @@ def video_resolver(ids):
 
 def deposit_build_url(video_id):
     """Build video url."""
-    return url_for('invenio_deposit_ui.depid', pid_value=video_id)
-
+    # return url_for('invenio_deposit_ui.video', pid_value=str(video_id))
+    return '/deposit/{0}'.format(video_id)
 
 def record_build_url(video_id):
     """Build video url."""
-    return url_for('invenio_records_ui.recid', pid_value=str(video_id))
-
+    #return url_for('invenio_records_ui.recid', pid_value=str(video_id))
+    return 'http://localhost:5000/video/{0}'.format(video_id)
 
 def record_unbuild_url(url):
     """Extract the PID from the deposit/record url."""
@@ -251,7 +252,9 @@ class Video(CDSDeposit):
 
         Adds bucket creation immediately on deposit creation.
         """
+        #import ipdb; ipdb.set_trace()
         project_id = data.get('_project_id')
+        # del data['_project_id']
         data['$schema'] = current_jsonschemas.path_to_url(
             'deposits/records/video-v1.0.0.json')
         project = project_resolver(project_id)

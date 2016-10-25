@@ -540,12 +540,6 @@ DEPOSIT_REST_ENDPOINTS = dict(
     ),
 )
 
-
-def _view():
-    import ipdb; ipdb.set_trace()
-    from flask import render_template
-    return_template('cds_deposit/index.html')
-
 # Deposit UI endpoints
 DEPOSIT_RECORDS_UI_ENDPOINTS = {
     'video_new': {
@@ -553,7 +547,6 @@ DEPOSIT_RECORDS_UI_ENDPOINTS = {
         'route': '/deposit/video/new',
         'template': 'cds_deposit/edit.html',
         'record_class': 'cds.modules.deposit.api:CDSDeposit',
-       'view_imp': 'cds.config:_view'
     },
     'depid': {
         'pid_type': 'depid',
@@ -580,7 +573,8 @@ DEPOSIT_RESPONSE_MESSAGES = dict(
         message="Edited succesfully."
     ),
 )
-# Depost UI forms
+
+DEPOSIT_FORM_TEMPLATES_BASE = 'templates/cds_deposit'
 DEPOSIT_FORM_TEMPLATES = {
     'default': 'default.html',
     'fieldset': 'fieldset.html',
@@ -589,5 +583,5 @@ DEPOSIT_FORM_TEMPLATES = {
     'radios': 'radios.html',
     'select': 'select.html',
     'button': 'button.html',
-    'textarea': 'textarea.html',
+    'textarea': 'textarea.html'
 }
