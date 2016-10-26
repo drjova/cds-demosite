@@ -105,13 +105,13 @@ def video_resolver(ids):
 
 def deposit_build_url(video_id):
     """Build video url."""
-    # return url_for('invenio_deposit_ui.video', pid_value=str(video_id))
-    return '/deposit/{0}'.format(video_id)
+    return url_for('invenio_deposit_rest.video_item', pid_value=str(video_id))
+
 
 def record_build_url(video_id):
     """Build video url."""
-    #return url_for('invenio_records_ui.recid', pid_value=str(video_id))
-    return 'http://localhost:5000/video/{0}'.format(video_id)
+    return url_for('invenio_records_rest.recid', pid_value=str(video_id))
+    #return 'http://localhost:5000/video/{0}'.format(video_id)
 
 def record_unbuild_url(url):
     """Extract the PID from the deposit/record url."""
@@ -122,7 +122,7 @@ def record_unbuild_url(url):
 def is_deposit(url):
     """Check if it's a deposit or a record."""
     # TODO can we improve check?
-    return url.startswith('/deposit')
+    return 'deposit' in url
 
 
 class Project(CDSDeposit):
@@ -252,7 +252,8 @@ class Video(CDSDeposit):
 
         Adds bucket creation immediately on deposit creation.
         """
-        #import ipdb; ipdb.set_trace()
+
+        import ipdb; ipdb.set_trace()
         project_id = data.get('_project_id')
         # del data['_project_id']
         data['$schema'] = current_jsonschemas.path_to_url(
