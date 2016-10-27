@@ -27,8 +27,9 @@
 from __future__ import absolute_import, print_function
 
 import invenio_deposit.links
-from flask import current_app, request
+from flask import current_app, request, url_for
 from invenio_records_files.links import default_bucket_link_factory
+from functools import partial
 
 
 def deposit_links_factory(pid):
@@ -46,3 +47,34 @@ def deposit_links_factory(pid):
     )
 
     return links
+
+
+def cdsdeposit_links_factory(pid, deposit_type):
+    """Factory for links generation."""
+    def _url(name, **kwargs):
+        """URL builder."""
+        endpoint = '.{0}_{1}'.format(deposit_type, name)
+        return url_for(endpoint, pid_value=pid.pid_value, _external=True,
+                       **kwargs)
+    links = {}
+    links['self'] = _url('item')
+    links['files'] = _url('files')
+    ui_endpoint = current_app.config.get('DEPOSIT_UI_ENDPOINT')
+    if ui_endpoint is not None:
+        links['html'] = ui_endpoint.format(
+            host=request.host,
+            scheme=request.scheme,
+            pid_value=pid.pid_value,
+        )
+
+    for action in ('publish', 'edit', 'discard'):
+        links[action] = _url('actions', action=action)
+    return links
+
+
+project_links_factory = partial(
+    cdsdeposit_links_factory, deposit_type='project')
+"""Project factory for links generation."""
+
+video_links_factory = partial(cdsdeposit_links_factory, deposit_type='video')
+"""Video factory for links generation."""
