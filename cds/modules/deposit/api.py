@@ -42,6 +42,7 @@ PRESERVE_FIELDS = (
     '_deposit',
     '_buckets',
     '_files',
+    'videos',
 )
 
 current_jsonschemas = LocalProxy(
@@ -209,7 +210,8 @@ class Project(CDSDeposit):
         # update project video references
         self._update_videos(refs_old, refs_new)
         # publish project
-        return super(Project, self).publish(pid=pid, id_=id_)
+        # return super(Project, self).publish(pid=pid, id_=id_)
+        return super(Project, self).publish(pid=pid, id_=id_).commit()
 
     def discard(self, pid=None):
         """Discard project changes."""
@@ -252,6 +254,7 @@ class Video(CDSDeposit):
         Adds bucket creation immediately on deposit creation.
         """
         project_id = data.get('_project_id')
+        # del data['_project_id']
         data['$schema'] = current_jsonschemas.path_to_url(
             'deposits/records/video-v1.0.0.json')
         project = project_resolver(project_id)

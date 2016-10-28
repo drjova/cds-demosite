@@ -156,16 +156,15 @@ setup(
             'cds = cds.cli:cli',
         ],
         'invenio_assets.bundles': [
+            'cds_deposit_jquery_js = cds.modules.deposit.bundles:js_jquery',
+            'cds_deposit_js = cds.modules.deposit.bundles:js_deposit',
+            'cds_previewer_theoplayer_css = cds.modules.previewer.bundles:theoplayer_css',
+            'cds_previewer_theoplayer_js = cds.modules.previewer.bundles:theoplayer_js',
+            'cds_previewer_video_css = cds.modules.previewer.bundles:video_css',
+            'cds_previewer_video_js = cds.modules.previewer.bundles:video_js',
+            'cds_record_js = cds.modules.records.bundles:js',
             'cds_theme_css = cds.modules.theme.bundles:css',
             'cds_theme_js = cds.modules.theme.bundles:js',
-            'cds_record_js = cds.modules.records.bundles:js',
-            'cds_previewer_video_css = '
-            'cds.modules.previewer.bundles:video_css',
-            'cds_previewer_video_js = cds.modules.previewer.bundles:video_js',
-            'cds_previewer_theoplayer_js = '
-            'cds.modules.previewer.bundles:theoplayer_js',
-            'cds_previewer_theoplayer_css = '
-            'cds.modules.previewer.bundles:theoplayer_css'
         ],
         'invenio_base.api_apps': [
             'cds_iiif = cds.modules.cds_iiif:CDSIIIF',
@@ -183,7 +182,7 @@ setup(
             'cds_theme = cds.modules.theme.views:blueprint',
         ],
         'invenio_base.api_blueprints': [
-            'cds_webhooks = cds.modules.webhooks.views:blueprint',
+            # 'cds_webhooks = cds.modules.webhooks.views:blueprint',
         ],
         'invenio_pidstore.minters': [
             'cds_recid = cds.modules.records.minters:recid_minter',
@@ -204,9 +203,9 @@ setup(
             'cds_celery_tasks = cds.modules.webhooks.tasks',
         ],
         'invenio_webhooks.receivers': [
-            'avc = cds.modules.webhooks.receivers:AVCWorkflow',
-            'downloader = cds.modules.webhooks.receivers:Downloader',
-            'metadata = cds.modules.webhooks.receivers:VideoMetadataExtractor',
+            # 'avc = cds.modules.webhooks.receivers:AVCWorkflow',
+            # 'downloader = cds.modules.webhooks.receivers:Downloader',
+            # 'metadata = cds.modules.webhooks.receivers:VideoMetadataExtractor',
         ],
         'invenio_previewer.previewers': [
             'cds_video = cds.modules.previewer.extensions.video',

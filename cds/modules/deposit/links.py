@@ -67,6 +67,10 @@ def cdsdeposit_links_factory(pid, deposit_type):
             pid_value=pid.pid_value,
         )
 
+    bucket_link = default_bucket_link_factory(pid)
+    if bucket_link is not None:
+        links['bucket'] = bucket_link
+
     for action in ('publish', 'edit', 'discard'):
         links[action] = _url('actions', action=action)
     return links

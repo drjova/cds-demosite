@@ -37,7 +37,6 @@ blueprint = Blueprint(
     static_folder='static'
 )
 
-
 @blueprint.app_template_filter('tolinksjs')
 def to_links_js(pid, deposit=None):
     """Get API links."""
@@ -49,9 +48,6 @@ def to_links_js(pid, deposit=None):
 
     return {
         'self': self_url,
-        'html': url_for(
-            'invenio_deposit_ui.{}'.format(pid.pid_type),
-            pid_value=pid.pid_value),
         'bucket': current_app.config['DEPOSIT_FILES_API'] + '/{0}'.format(
             str(deposit.files.bucket.id)),
         'discard': self_url + '/actions/discard',

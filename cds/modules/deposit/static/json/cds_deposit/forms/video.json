@@ -1,0 +1,55 @@
+[
+  {
+        "type": "fieldset",
+        "title": "Video",
+            "items": [
+                {
+                    "title": "Name",
+                    "key": "title.title"
+                },
+                {
+                    "title": "Description",
+                    "key": "description.value",
+                    "type": "textarea"
+                },
+                {
+                    "title": "Contributors",
+                    "key": "contributors",
+                    "add": "Add another Contributor",
+                    "style": {
+                        "add": "btn-warning"
+                    },
+                    "items":[
+                        {
+                            "title": "Name",
+                            "key": "contributors[].name"
+                        },
+                        {
+                            "title": "Name",
+                            "key": "contributors[].name"
+                        }
+                    ]
+                },
+                {
+                  "type": "template",
+                  "key": "date",
+                  "title": "Date",
+                  "placeholder": "eg. 2013-05-08",
+                  "templateUrl": "/static/templates/cds_deposit/datepicker.html",
+                  "format": "yyyy-MM-dd",
+                  "description": "Required. Format: YYYY-MM-DD. In case your upload was already published elsewhere, please use the date of first publication.",
+                  "fa_cls": "fa-calendar",
+                  "required": true
+                },
+                {
+                    "title": "License",
+                    "key": "license"
+                },
+                {
+                    "title": "Copyright URL",
+                    "key": "copyright.url"
+                }
+            ]
+
+      }
+]

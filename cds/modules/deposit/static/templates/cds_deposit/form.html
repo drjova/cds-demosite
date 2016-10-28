@@ -1,13 +1,25 @@
+<span class="label label-default">{{ $ctrl.cdsDepositCtrl.index }}</span>
+<span class="label label-info">{{ $ctrl.cdsDepositCtrl.record._deposit.status }}</span>
 <div class="row">
-    <div class="col-sm-12">
-        <form
-          name="depositionForm"
-          class="form-horizontal"
-          ng-hide="recordsVM.invenioRecordsAlert.type == 'success' && recordsVM.invenioRecordsArgs.responseParams[recordsVM.invenioRecordsAlert.action].hide"
-          sf-schema="recordsVM.invenioRecordsSchema"
-          sf-form="recordsVM.invenioRecordsForm"
-          sf-model="recordsVM.invenioRecordsModel"
-          sf-options="{ formDefaults: { disableSuccessState: true, feedback: false, onChange: 'recordsVM.removeValidationMessage(modelValue,form)', ngModelOptions: { updateOn: 'default blur', allowInvalid: true} } }"
-          ></form>
+  <div class="col-sm-12">
+    <div ng-show="!$ctrl.cdsDepositCtrl.master">
+      <cds-actions
+        template="/static/templates/cds_deposit/actions.html"
+      >
+      </cds-actions>
     </div>
+    <form
+      name="$ctrl.cdsDepositCtrl.depositFormModel"
+      class="form-horizontal"
+      sf-schema="$ctrl.cdsDepositCtrl.schema"
+      sf-form="$ctrl.form"
+      sf-model="$ctrl.cdsDepositCtrl.record"
+      sf-options="{ formDefaults: { disableSuccessState: true, feedback: false}}"
+      ></form>
+  </div>
+</div>
+<a ng-init="showDebug=false" ng-click="showDebug=!showDebug">Debug</a>
+<div ng-show="showDebug">
+  <pre>{{ $ctrl.cdsDepositCtrl.record | json}}</pre>
+  <pre>{{ $ctrl.cdsDepositCtrl.links | json}}</pre>
 </div>
