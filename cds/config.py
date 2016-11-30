@@ -634,3 +634,7 @@ DEPOSIT_DROPBOX_APP_KEY = 'CHANGE_ME'
 # SSE
 ###############################################################################
 SSE_REDIS_URL = 'redis://localhost:6379/1'
+CDS_SORENSON_PROXIES = {
+    'http': 'socks5://127.0.01:8123',
+    'https': 'socks5://127.0.01:8123',
+}

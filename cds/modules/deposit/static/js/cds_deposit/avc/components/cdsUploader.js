@@ -43,11 +43,10 @@ function cdsUploaderCtrl($scope, $q, Upload, $http, $timeout) {
         _files = _.difference(_files, videoFiles);
         // Add the files to the list
         Array.prototype.push.apply(that.files, _files);
-        // Add the files to the queue
+        // Add the files to the queuew        Array.prototype.push.apply(that.queue, _files);
         Array.prototype.push.apply(that.queue, _files);
       }
     };
-
 
     // Prepare file request
     this.prepareUpload = function(file) {
@@ -171,11 +170,14 @@ function cdsUploaderCtrl($scope, $q, Upload, $http, $timeout) {
 
     this.upload = function() {
       if (that.queue.length > 0) {
+        // FIXME: LOADING
         // Start loading
         $scope.$emit('cds.deposit.loading.start');
-        that.cdsDepositCtrl.loading = true;
         // Start local loading
-        that.loading = true;
+        $timeout(function() {
+          that.cdsDepositCtrl.loading = true;
+          that.loading = true;
+        }, 0);
         that.uploader()
         .then(
           function success(response) {
@@ -186,10 +188,9 @@ function cdsUploaderCtrl($scope, $q, Upload, $http, $timeout) {
           }
         ).finally(
           function done() {
-            // Stop loading
+            // FIXME: LOADING
             $scope.$emit('cds.deposit.loading.stop');
             that.cdsDepositCtrl.loading = false;
-            // Local loading
             that.loading = false;
           }
         );
@@ -200,7 +201,9 @@ function cdsUploaderCtrl($scope, $q, Upload, $http, $timeout) {
   this.$postLink = function() {
     // Upload video file when creating a new deposit
     if (!this.cdsDepositCtrl.master) {
-      this.upload();
+      $timeout(function () {
+        that.upload();
+      }, 1300);
     }
   }
 

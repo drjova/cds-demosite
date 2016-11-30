@@ -11,31 +11,35 @@
           </cds-actions>
         </div>
         <!-- Progress -->
+
         <div class="col-sm-9">
-          {{$ctrl.cdsDepositCtrl.alerts | json}}
-          <div ng-show="$ctrl.cdsDepositCtrl.record._deposit.state">
+
+          -- UPDATED: {{$ctrl.cdsDepositCtrl.lastUpdated}} -- -- LOADING: {{$ctrl.cdsDepositCtrl.loading}} --
+
+          <div ng-show="$ctrl.cdsDepositCtrl.stateReporter[$ctrl.cdsDepositCtrl.stateOrder[0]]" class="row">
               <div class="col-sm-12">
+                <small>{{ $ctrl.cdsDepositCtrl.stateCurrent }}</small> - {{ $ctrl.cdsDepositCtrl.stateReporter[$ctrl.cdsDepositCtrl.stateCurrent].message }}
                 <div class="progress">
-                  <div class="progress-bar" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="width: {{$ctrl.cdsDepositCtrl.progress_()}}%;">
-                      {{$ctrl.cdsDepositCtrl.record._deposit.state}}
-                  </div>
+                    <div class="progress-bar" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: {{$ctrl.cdsDepositCtrl.stateReporter[$ctrl.cdsDepositCtrl.stateCurrent].payload.percentage}}%;">
+                        {{$ctrl.cdsDepositCtrl.stateReporter[$ctrl.cdsDepositCtrl.stateCurrent].payload.percentage}} %
+                    </div>
                 </div>
               </div>
           </div>
-          <div ng-show="$ctrl.cdsDepositCtrl.loading" class="row">
+
+          <div ng-show="$ctrl.cdsDepositCtrl.stateQueue.FAILURE.length > 0" class="row">
               <div class="col-sm-12">
-                <div class="progress">
-                    <div class="progress-bar" role="progressbar" aria-valuenow="60" aria-valuemin="0" aria-valuemax="100" style="width: {{$ctrl.cdsDepositCtrl.progress}}%;">
-                      Downloading {{$ctrl.cdsDepositCtrl.progress}} %
-                  </div>
+                <div class="alert alert-danger" ng-repeat="status in $ctrl.cdsDepositCtrl.stateQueue.FAILURE">
+                  <strong>{{ $ctrl.cdsDepositCtrl.stateReporter[status].message }}</strong>
                 </div>
               </div>
           </div>
+
          <!-- Nav tabs -->
          <ul ng-init="active='metadata'" class="nav nav-tabs" role="tablist">
            <li role="presentation" ng-class="{active: active=='metadata'}"><a ng-click="active='metadata'" role="tab" data-toggle="tab">Metadata</a></li>
            <li role="presentation" ng-class="{active: active=='files'}"><a ng-click="active='files'" role="tab" data-toggle="tab">Files</a></li>
-           <li role="presentation" ng-class="{active: active=='debug'}"><a ng-click="active='debug'" role="tab" data-toggle="tab">Debug</a></li>
+           <li role="presentation" ng-class="{active: active=='debug'}"><a ng-click="active='debug'" role="tab" data-toggle="tab">Debug (for @drjova)</a></li>
          </ul>
          <!-- Tab panes -->
          <div class="tab-content cds-tab-content cds-padding-20 ">
@@ -53,6 +57,13 @@
              <div ng-transclude></div>
            </div>
            <div ng-show="active=='debug'" role="tabpanel" ng-class="{active: active=='debug'}"  class="tab-pane">
+             <strong>STATUS ORDER:</strong> {{ $ctrl.cdsDepositCtrl.stateOrder }}
+             <strong>PENDING:</strong> {{ $ctrl.cdsDepositCtrl.stateQueue.PENDING }}
+             <strong>STARTED:</strong> {{ $ctrl.cdsDepositCtrl.stateQueue.STARTED }}
+             <strong>FAILURE:</strong> {{ $ctrl.cdsDepositCtrl.stateQueue.FAILURE }}
+             <strong>SUCCESS:</strong> {{ $ctrl.cdsDepositCtrl.stateQueue.SUCCESS }}
+             <br />
+             <hr />
              <span class="label label-default">{{ $ctrl.cdsDepositCtrl.index }}</span>
              <span class="label label-info">{{ $ctrl.cdsDepositCtrl.record._deposit.status }}</span>
              <pre>{{ $ctrl.cdsDepositCtrl.record | json}}</pre>

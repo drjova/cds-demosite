@@ -70,6 +70,7 @@ js_jquery = NpmBundle(
 js_cds_deposit = Bundle(
     # 'js/cds_deposit/cdsDeposit.module.js',
     'js/cds_deposit/avc/avc.module.js',
+    'js/cds_deposit/avc/factories/states.js',
     'js/cds_deposit/avc/components/cdsActions.js',
     'js/cds_deposit/avc/components/cdsDeposit.js',
     'js/cds_deposit/avc/components/cdsDeposits.js',
