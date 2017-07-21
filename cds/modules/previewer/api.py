@@ -74,6 +74,25 @@ class CDSPreviewRecordFile(PreviewFile):
                 filename='frame-1.jpg')
 
     @property
+    def record_uri(self):
+        """Get the record uri."""
+        return url_for(
+            'invenio_records_rest.recid_item',
+            pid_value=self.pid.pid_value,
+            _external=True
+        )
+
+    @property
+    def embed_uri(self):
+        """Get the embed uri."""
+        return url_for(
+            'invenio_records_ui.recid_preview',
+            pid_value=self.pid.pid_value,
+            filename=self.file.key,
+            _external=True
+        )
+
+    @property
     def thumbnails_uri(self):
         """Get video's thumbnails' link."""
         return url_for(
@@ -83,7 +102,7 @@ class CDSPreviewRecordFile(PreviewFile):
     @property
     def subtitles(self):
         """Get video's subtitles."""
-        return [(f['links']['self'], f['tags']['language'])
+        return [(f['links']['self'], 'English')
                 for f in self.record['_files']
                 if f['context_type'] == 'subtitle']
 
