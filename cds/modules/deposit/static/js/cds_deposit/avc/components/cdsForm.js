@@ -215,6 +215,20 @@ function cdsFormCtrl($scope, $http, $q, schemaFormDecorators) {
     }
   );
 
+  this.onRemoveValue = function(item, model) {
+    that.cdsDepositCtrl.record._access.update = _.pull(
+      that.cdsDepositCtrl.record._access.update,
+      item
+    );
+    that.cdsDepositCtrl.setDirty();
+  }
+
+  this.onSelectValue = function(item, model) {
+    that.cdsDepositCtrl.record._access.update.push(model);
+    that.cdsDepositCtrl.setDirty();
+  }
+
+
   this.autocompleteAccess = function(query) {
     var options = {
       url: '//cds.cern.ch/submit/get_authors',
@@ -224,8 +238,12 @@ function cdsFormCtrl($scope, $http, $q, schemaFormDecorators) {
       }
     };
     that.autocompleteAuthors(options, query).then(function(results) {
+      console.log(results);
       that.accessSuggestions = results.data.map(function(res) {
-        return res.value.email;
+        return {
+          name: res.value.name,
+          email: res.value.email,
+        }
       });
     });
   };

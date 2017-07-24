@@ -114,27 +114,38 @@
               </div>
             </div>
             <div ng-show="active=='access'" role="tabpanel" ng-class="{active: active=='access'}" class="tab-pane">
-              <div class="row">
+              <div ng-init="selectedShare=$ctrl.cdsDepositCtrl.record._access.update" class="row">
                 <div class="col-sm-6">
                   <h4>Share deposit with</h4>
                   <ui-select
                    multiple
-                   on-select="$ctrl.cdsDepositCtrl.setDirty()"
-                   ng-model="$ctrl.cdsDepositCtrl.record._access.update"
+                   on-select="$ctrl.onSelectValue($item, $model);selectedShare=$ctrl.cdsDepositCtrl.record._access.update"
+                   on-remove="$ctrl.onRemoveValue($item, $model);selectedShare=$ctrl.cdsDepositCtrl.record._access.update"
+                   ng-model="selectedShare"
                    theme="bootstrap"
-                   title="Add emails"
                   >
                    <ui-select-match
-                    placeholder="Select emails..."
+                    placeholder="Search"
                   >
-                    {{$item}}
+                    {{ $item.email || $item }}
                   </ui-select-match>
                    <ui-select-choices
-                    repeat="email in $ctrl.accessSuggestions | filter:$select.search"
+                    repeat="suggestion.email as suggestion in $ctrl.accessSuggestions | propsFilter: {name: $select.search, email: $select.search} | orderBy:'name'"
                     refresh="$ctrl.autocompleteAccess($select.search)"
                    >
-                     {{email}}
+                    <div ng-bind-html="suggestion.name | highlight: $select.search"></div>
+                    <small><{{suggestion.email}}></small>
                    </ui-select-choices>
+                   <ui-select-no-choice>
+                     <p class="pa-5 mb-0">
+                       <span ng-show="$select.search">
+                         Not results for "{{$select.search}}"
+                       </span>
+                       <span ng-show="!$select.search">
+                         Start typing a name ...
+                       </span>
+                     </p>
+                   </ui-select-no-choice>
                  </ui-select>
                 </div>
                 <!-- Record permissions -->
@@ -160,7 +171,7 @@
                       </label>
                       <ui-select
                        multiple
-                       on-select="$ctrl.cdsDepositCtrl.setDirty()"
+                       on-select="$ctrl.onSelectPop($item, $model, 'email');$ctrl.cdsDepositCtrl.setDirty()"
                        ng-model="$ctrl.cdsDepositCtrl.record._access.read"
                        theme="bootstrap"
                        ng-disabled="(!$ctrl.cdsDepositCtrl.record.category && $ctrl.cdsDepositCtrl.cdsDepositsCtrl.accessRights.metadata.access.public === 'public') || $ctrl.cdsDepositCtrl.isPublished()"
@@ -168,15 +179,16 @@
                       >
                        <ui-select-match
                         ui-lock-choice="($ctrl.cdsDepositCtrl.cdsDepositsCtrl.accessRights.metadata.access.restricted || []).indexOf($item) > -1"
-                        placeholder="Select emails..."
+                        placeholder="Search"
                       >
-                        {{$item}}
+                        {{ $item.email || $item }}
                       </ui-select-match>
                        <ui-select-choices
-                       repeat="email in $ctrl.accessSuggestions | filter:$select.search"
-                       refresh="$ctrl.autocompleteAccess($select.search)"
+                        repeat="suggestion.email as suggestion in $ctrl.accessSuggestions | propsFilter: {name: $select.search, email: $select.search} | orderBy:'name'"
+                        refresh="$ctrl.autocompleteAccess($select.search)"
                        >
-                         {{email}}
+                         <div ng-bind-html="suggestion.name | highlight: $select.search"></div>
+                         <small><{{suggestion.email}}></small>
                        </ui-select-choices>
                      </ui-select>
                     </div>
