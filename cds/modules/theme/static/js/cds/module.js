@@ -282,3 +282,37 @@ app.directive('imageProgressiveLoading', ['$timeout', function($timeout) {
       link: linkFunction
   };
 }]);
+
+// Filter to translage ISO languages to language name
+// i.e. en -> English , fr -> French
+app.filter('isoToLanguage', function () {
+  return function (code) {
+    // Based on https://www.loc.gov/standards/iso639-2/php/code_list.php
+    var languages = {
+      'ar': 'Arabic',
+      'bg': 'Bulgarian',
+      'ca': 'Catalan',
+      'ch': 'Chamorro',
+      'de': 'German',
+      'el': 'Greek',
+      'en': 'English',
+      'en-fr': 'English/French',
+      'es': 'Spanish',
+      'fr': 'French',
+      'hr': 'Croatian',
+      'it': 'Italian',
+      'ja': 'Japanese',
+      'ka': 'Georgian',
+      'no': 'Norwegian',
+      'pl': 'Polish',
+      'pt': 'Portuguese',
+      'ru': 'Russian',
+      'silent': 'Silent',
+      'sk': 'Slovak',
+      'sv': 'Swedish',
+      'zh_CN': 'Chinese',
+      'zh_TW': 'Chinese',
+    };
+    return languages[code] || code;
+  };
+});
