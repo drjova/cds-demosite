@@ -30,6 +30,8 @@ function cdsUploaderCtrl(
 
   function updateMasterFileUpload(state, percentage) {
     var masterFile = that.cdsDepositCtrl.findMasterFile();
+    // !REMOVE!
+    /*
     if (!masterFile) {
       that.cdsDepositCtrl.stateCurrent = 'file_upload';
       that.cdsDepositCtrl.updateStateReporter('file_upload', {
@@ -39,6 +41,7 @@ function cdsUploaderCtrl(
       }, state);
       that.cdsDepositCtrl.calculateCurrentState();
     }
+    */
   }
 
   /*
@@ -108,13 +111,10 @@ function cdsUploaderCtrl(
     var args = that.prepareUpload(upload);
     var deposit = that.cdsDepositCtrl;
     deposit.record._cds.state.file_upload = 'STARTED';
-    $scope.$emit('cds.deposit.status.changed', deposit.id, deposit.stateQueue);
     Upload.http(args)
       .then(
         function success(response) {
           deposit.record._cds.state.file_upload = 'SUCCESS';
-          $scope.$emit('cds.deposit.status.changed', deposit.id,
-                       deposit.stateQueue);
           _success(
             response.config.data.key,
             response.data
@@ -144,8 +144,6 @@ function cdsUploaderCtrl(
         },
         function error(response) {
           updateMasterFileUpload('FAILURE');
-          $scope.$emit('cds.deposit.status.changed', deposit.id,
-                       deposit.stateQueue);
           promise.reject(response);
         },
         function progress(evt) {

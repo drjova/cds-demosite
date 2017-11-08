@@ -428,10 +428,6 @@ class AVCWorkflow(CeleryAsyncReceiver):
         event.response['presets'] = preset_qualities
         return group(
             self.run_task(event=event, task_name='file_video_extract_frames'),
-            *[self.run_task(
-                event=event, task_name='file_transcode',
-                preset_quality=preset_quality)
-              for preset_quality in preset_qualities]
         )
 
     def _workflow(self, event):

@@ -1,9 +1,9 @@
 function cdsDepositCtrl(
   $scope,
-  $window,
   $q,
   $timeout,
   $interval,
+  $window,
   $sce,
   depositExtractedMetadata,
   depositStates,
@@ -23,9 +23,6 @@ function cdsDepositCtrl(
 
   // The Upload Queue
   this.filesQueue = [];
-
-  // Auto data update timeout
-  this.autoUpdateTimeout = null;
 
   // Checkout
   this.lastUpdated = new Date();
@@ -57,27 +54,12 @@ function cdsDepositCtrl(
   that.actionLoading = false;
 
   // Deposit type
-  Object.defineProperty(this, 'depositType', {
-    get: function() {
-      return that.master ? 'project' : 'video';
-    }
-  });
+  that.depositType = that.master ? 'project' : 'video';
 
   // Deposit status
   this.isPublished = function() {
     return that.record._deposit.status === 'published';
   };
-
-  this.isProjectPublished = function() {
-    var isPublished;
-    if (that.depositType === 'project') {
-      isPublished = that.isPublished();
-    } else {
-      var master = that.cdsDepositsCtrl.master.metadata;
-      isPublished = master._deposit.status === 'published';
-    }
-    return isPublished;
-  }
 
   this.isDraft = function() {
     return that.record._deposit.status === 'draft';
@@ -99,13 +81,9 @@ function cdsDepositCtrl(
 
   this.$onDestroy = function() {
     try {
-      // Clear local storage
-      that.cleanLocalStorage();
-
       // Destroy listener
       that.sseEventListener();
       $interval.cancel(that.fetchStatusInterval);
-      $timeout.cancel(that.autoUpdateTimeout);
     } catch (error) {}
   };
 
@@ -120,10 +98,8 @@ function cdsDepositCtrl(
   this.$onInit = function() {
     // Init showAll
     this.initShowAll();
-
-    // Loading
+    // loading
     this.loading = false;
-
     this.findFilesByContextType = function(type) {
       return _.find(that.record._files, {'context_type': type});
     }
@@ -151,7 +127,7 @@ function cdsDepositCtrl(
         parentObj[lastPart] = value;
       }
       return obj;
-    };
+    }
 
     var hasNoProperties = function(obj) {
       return Object.getOwnPropertyNames(obj).length == 0;
@@ -215,6 +191,7 @@ function cdsDepositCtrl(
     this.restartFailedSubformats = function(subformatKeys) {
       var master = that.findMasterFile();
       var eventId = master.tags._event_id;
+
       master.subformat.forEach(
         function(subformat) {
           if (subformatKeys.includes(subformat.key)) {
@@ -305,7 +282,6 @@ function cdsDepositCtrl(
 
     this.videoPreviewer = function(deposit, key) {
       var videoUrl;
-
       var master = that.findMasterFile();
       if (master && master.subformat) {
         var finishedSubformats = master.subformat.filter(function(fmt) {
@@ -346,60 +322,59 @@ function cdsDepositCtrl(
 
     // Refresh tasks from feedback endpoint
     this.fetchCurrentStatuses = function() {
-      var masterFile = that.findMasterFile();
-      if (masterFile) {
-        var tags = masterFile.tags;
-        if (tags && tags._event_id) {
-          var eventId = tags._event_id;
+      if (that.isDraft()) {
+        var eventId = _.get(that.findMasterFile(), 'tags._event_id', undefined);
+        if (eventId){
           that.getTaskFeedback(eventId)
-            .then(function(data) {
-              var groupedTasks = _.groupBy(data, 'name');
-              var transcodeTasks = groupedTasks.file_transcode;
-              // Update the state reporter with all the new info
-              data.forEach(function(task) {
-                that.updateStateReporter(task.name, task.info, task.status);
-              });
-              // Update subformat info
-              if (!transcodeTasks) {
-                return;
-              }
-              var subformatsNew = transcodeTasks.filter(function(task) {
-                return task.info;
-              }).map(function(task) {
-                var payload = task.info.payload;
-                if (payload.percentage === 100 && task.status === 'SUCCESS') {
-                  payload.completed = true;
-                } else if (task.status === 'FAILURE') {
-                  payload.errored = true;
-                }
-                return payload;
-              });
-              masterFile.subformat = subformatsNew;
-              that.processSubformats();
-              that.calculateCurrentState();
-            });
+           .then(function(data) {
+             var groupedTasks = _.groupBy(data, 'name');
+             var transcodeTasks = groupedTasks.file_transcode;
+             // Update the state reporter with all the new info
+             data.forEach(function(task) {
+               that.updateStateReporter(task.name, task.info, task.status);
+             });
+             // Update subformat info
+             if (!transcodeTasks) {
+               return;
+             }
+             var subformatsNew = transcodeTasks.filter(function(task) {
+               return task.info;
+             }).map(function(task) {
+               var payload = task.info.payload;
+               if (payload.percentage === 100 && task.status === 'SUCCESS') {
+                 payload.completed = true;
+               } else if (task.status === 'FAILURE') {
+                 payload.errored = true;
+               }
+               return payload;
+             });
+             masterFile.subformat = subformatsNew;
+             that.processSubformats();
+             that.calculateCurrentState();
+           });
         }
       }
     };
 
     // Update deposit based on extracted metadata from task
     this.fillMetadata = function(answer) {
-      [metadataToFill, metadataToFill_values] = that.metadataToFill;
+
+      var metadataToFill =that.metadataToFill[0]
+      var metadataToFill_values = that.metadataToFill[1];
       if (answer) {
         // Merge the data
         angular.merge(that.record, metadataToFill);
         that.preActions();
         // Make a partial Save
-        return that.makeSingleAction('SAVE_PARTIAL')
+        that.makeSingleAction('SAVE_PARTIAL')
           .then(
             that.onSuccessAction,
             that.onErrorAction
           )
           .finally(that.postActions);
       }
-      that.setOnLocalStorage('prompted', true);
+      that.setOnLocalStorage('prompted', 'true');
       that.metadataToFill = false;
-      return;
     };
 
     // Get metadata to automatically fill form from extracted metadata
@@ -438,7 +413,7 @@ function cdsDepositCtrl(
     // Pre-fill changes to display to the user
     this.getMetadataToDisplay = function() {
         if(that.metadataToFill){
-          [metadataToFill, metadataToFill_values] = that.metadataToFill;
+          metadataToFill_values = that.metadataToFill[0];
           return metadataToFill_values;
         }
         return {}
@@ -501,12 +476,6 @@ function cdsDepositCtrl(
       this.cleanLocalStorage();
     }
 
-    // cdsDeposit events
-
-    // Success message
-    // Loading message
-    // Error message
-
     // Messages Success
     $scope.$on('cds.deposit.success', function(evt, message) {
       if (evt.currentScope === evt.targetScope) {
@@ -556,7 +525,8 @@ function cdsDepositCtrl(
     that.videoPreviewer();
     // Update subformat statuses
     that.fetchCurrentStatuses();
-    that.fetchStatusInterval = $interval(that.fetchCurrentStatuses, 15000);
+    that.fetchStatusInterval = $interval(
+      _.throttle(that.fetchCurrentStatuses, 15000), 15000);
     // What the order of contributors and check make it dirty, throttle the
     // function for 1sec
     $scope.$watch(
@@ -577,7 +547,6 @@ function cdsDepositCtrl(
         }, 0);
       }
     });
-
     // Listen for task status changes
     $scope.$on('cds.deposit.task', function(evt, type, status, data) {
       if (type == 'file_video_metadata_extraction' && status == 'SUCCESS') {
@@ -652,15 +621,20 @@ function cdsDepositCtrl(
 
     this.displaySuccess = function() {
       return that.depositStatusCurrent === that.depositStatuses.SUCCESS &&
-        !that.isPublished() &&
-        !that.record.recid;
+        !that.isPublished();
     };
 
     this.postSuccessProcess = function(responses) {
       // Get only the latest response (in case of multiple actions)
       var response = (responses[responses.length - 1] || responses).data;
-      // Update record: use _ and not ng because otherwise it will destroy references to the parent record
-      that.record = _.merge(that.record, response.metadata);
+      // Update record
+      if (this.updateRecordAfterSuccess) {
+        this.record = angular.merge({}, this.record, response.metadata);
+      }
+      // Update links
+      if (this.updateLinksAfterSuccess) {
+        this.links = response.links;
+      }
     };
 
     this.postErrorProcess = function(response) {
@@ -683,7 +657,7 @@ function cdsDepositCtrl(
   };
 
   // Do a single action at once
-  this.makeSingleAction = function(action) {
+  this.makeSingleAction = function(action, redirect) {
     var cleanRecord = cdsAPI.cleanData(that.record),
       url = cdsAPI.guessEndpoint(cleanRecord, that.depositType, action, that.links);
 
@@ -696,14 +670,13 @@ function cdsDepositCtrl(
   };
 
   // Do multiple actions at once
-  this.makeMultipleActions = function(actions) {
+  this.makeMultipleActions = function(actions, redirect) {
     var promises = [];
     var cleanRecord = cdsAPI.cleanData(that.record);
     angular.forEach(
       actions,
       function(action, index) {
         var url = cdsAPI.guessEndpoint(cleanRecord, that.depositType, action, that.links);
-
         this.push(function() {
           return cdsAPI.makeAction(
             url,
@@ -783,7 +756,7 @@ function cdsDepositCtrl(
   // Local storage
   this.getFromLocalStorage = function(key) {
     try {
-      return localStorageService.get(that.id)[key];
+      return _.get(localStorageService.get(that.id), key, undefined);
     } catch (error) {
       return null;
     }
@@ -804,6 +777,19 @@ function cdsDepositCtrl(
     that.setPristine();
   });
 
+  // Listen for any changes in the record state
+  $scope.$watch('$ctrl.record._cds.state', function(newVal, oldVal, scope) {
+    // The states have been changed
+    that.calculateCurrentState();
+  }, true);
+  // Listen for any updates
+  $scope.$on('cds.deposit.metadata.update.' + that.id, function(evt, data) {
+    // Update only if it's draft
+    if (that.isDraft()) {
+      that.updateDeposit(data);
+    }
+  });
+
   $window.onbeforeunload = function() {
     // Warn the user if there are any unsaved changes
     if (!that.cdsDepositsCtrl.onExit && !that.isPristine()) {
@@ -815,10 +801,10 @@ function cdsDepositCtrl(
 
 cdsDepositCtrl.$inject = [
   '$scope',
-  '$window',
   '$q',
   '$timeout',
   '$interval',
+  '$window',
   '$sce',
   'depositExtractedMetadata',
   'depositStates',
@@ -840,6 +826,7 @@ cdsDepositCtrl.$inject = [
  *   ``children`` a new ``cds-deposit`` directive will be generated.
  * @attr {String} index - The deposit index in the list of deposits.
  * @attr {Boolean} master - If this deposit is the ``master``.
+ * @attr {Boolean} updateRecordAfterSuccess - Update the record after action.
  * @attr {Integer} updateRecordInBackground - Update the record in background.
  * @attr {String} schema - The URI for the deposit type schema.
  * @attr {Object} links - The deposit action links (i.e. ``self``).
@@ -849,6 +836,7 @@ cdsDepositCtrl.$inject = [
  *  <cds-deposit
  *   master="true"
  *   links="$ctrl.master.links"
+ *   update-record-after-success="true"
  *   schema="{{ $ctrl.masterSchema }}"
  *   record="$ctrl.master.metadata"
  *  ></cds-deposit>
@@ -860,6 +848,7 @@ function cdsDeposit() {
       index: '=',
       master: '@',
       // Interface related
+      updateRecordAfterSuccess: '@',
       updateRecordInBackground: '@?',
       // Deposit related
       id: '=',

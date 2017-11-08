@@ -414,6 +414,7 @@ function cdsFormCtrl($scope, $http, $q, schemaFormDecorators) {
         })
         .then(function() {
           $scope.$broadcast('cds.deposit.project.saveAll');
+          $scope.$broadcast('cds.deposit.pristine.all');
         });
     }
   }

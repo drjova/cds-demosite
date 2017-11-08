@@ -40,6 +40,13 @@ html, body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+.cds-deposit-metadata-extraction-alert {
+  line-height: 33px;
+  span {
+    line-height: 33px;
+  }
+}
+
 .cds-cover {
   margin-top: -70px !important;
 }

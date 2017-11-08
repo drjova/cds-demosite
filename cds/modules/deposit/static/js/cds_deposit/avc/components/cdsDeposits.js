@@ -2,6 +2,7 @@ function cdsDepositsCtrl(
   $http,
   $q,
   $scope,
+  $interval,
   $window,
   $location,
   $element,
@@ -10,7 +11,8 @@ function cdsDepositsCtrl(
   cdsAPI,
   urlBuilder,
   localStorageService,
-  toaster
+  toaster,
+  jwt
 ) {
   var that = this;
   this.edit = false;
@@ -25,6 +27,9 @@ function cdsDepositsCtrl(
   this.accessRights = {};
   // The last video upload promise
   this.lastVideoUpload = $q.resolve();
+
+  // Interval Autoupdate
+  this.autoUpdateInterval = null;
 
   // Schemas and forms
   that.masterSchemaResolved = {};
@@ -50,7 +55,35 @@ function cdsDepositsCtrl(
   // Show message when window is closing
   this.onExit = false;
 
-  this.overallState = {};
+  // Fetch the latest record data (only if it's a project)
+  this.fetchRecord = function() {
+    // Fetch only if it is in ``draft`` mode
+    if (that.master.metadata._deposit.status === 'draft') {
+      cdsAPI.action(that.master.links.self || that.masterLinks.self , 'GET', {}, jwt).then(function(data) {
+        // Metadata for the project
+        $scope.$broadcast(
+          'cds.deposit.metadata.update.' + data.data.metadata._deposit.id,
+          data.data.metadata
+        );
+        // Metadata for the videos
+        _.each(data.data.metadata.videos, function(_metadata) {
+          $scope.$broadcast(
+            'cds.deposit.metadata.update.' + _metadata._deposit.id,
+            _metadata
+          );
+        })
+      });
+    }
+  }
+
+  this.$onDestroy = function() {
+    try {
+      // Destroy interval
+      $interval.cancel(that.autoUpdateInterval);
+    } catch (error) {
+      // It's ok, anyway the user is gone
+    }
+  };
 
   this.$onInit = function() {
     // Check the if the app is on top;
@@ -95,7 +128,8 @@ function cdsDepositsCtrl(
     that.categoriesPromise = $http.get(urlBuilder.categories()).then(
       function(data) {
         return data.data.hits.hits;
-      });
+      }
+    );
   };
 
   this.addMaster = function(deposit, files) {
@@ -106,6 +140,8 @@ function cdsDepositsCtrl(
       this.master = deposit;
       // Initialized
       this.initialized = true;
+      // Start updating the metadata every 30secs
+      that.autoUpdateInterval = $interval(_.throttle(that.fetchRecord, 30000), 30000);
       if (this.master.links.html) {
         this.handleRedirect(this.master.links.html, true);
       }
@@ -150,9 +186,6 @@ function cdsDepositsCtrl(
   this.addChildren = function(deposit, files) {
     deposit.metadata._files = files || [];
     this.master.metadata.videos.push(deposit.metadata);
-    this.overallState[deposit.metadata._deposit.id] = angular.copy(
-      that.initState
-    );
   };
 
   this.isVideoFile = function(key) {
@@ -395,6 +428,7 @@ cdsDepositsCtrl.$inject = [
   '$http',
   '$q',
   '$scope',
+  '$interval',
   '$window',
   '$location',
   '$element',
@@ -404,6 +438,7 @@ cdsDepositsCtrl.$inject = [
   'urlBuilder',
   'localStorageService',
   'toaster',
+  'jwt',
 ];
 
 function cdsDeposits() {

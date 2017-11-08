@@ -301,6 +301,8 @@ class ExtractMetadataTask(AVCTask):
         :param self: reference to instance of task base class
         :param uri: URL of the file to extract metadata from.
         """
+        if not uri:
+            uri = self.object.file.uri
         recid = str(PersistentIdentifier.get(
             'depid', self.deposit_id).object_uuid)
 
@@ -310,6 +312,8 @@ class ExtractMetadataTask(AVCTask):
             extracted_dict = self.create_metadata_tags(
                 uri=uri, object_=self.object, keys=self._all_keys)
         except Exception as exc:
+            logger.warning(
+                'Trying for URI {0}'.format(self.object.file.uri))
             db.session.rollback()
             raise self.retry(max_retries=5, countdown=5, exc=exc)
 
