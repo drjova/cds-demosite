@@ -157,7 +157,8 @@ class CDSDeposit(Deposit):
             'material': '',
             'url': 'http://copyright.web.cern.ch',
         }])
-        data.setdefault('_access', {})
+        if '_access' not in data:
+            data.setdefault('_access', {})
         deposit = super(CDSDeposit, cls).create(
             data, id_=id_, validator=PartialDraft4Validator)
         RecordsBuckets.create(record=deposit.model, bucket=bucket)
@@ -439,6 +440,9 @@ class Project(CDSDeposit):
         kwargs.setdefault('bucket_location', 'videos')
         data['$schema'] = current_jsonschemas.path_to_url(cls._schema)
         data.setdefault('videos', [])
+        data.setdefault('_access', {})
+        # Add the current user to the update list
+        data['_access']['update'] = [current_user.email]
         return super(Project, cls).create(data, id_=id_, **kwargs)
 
     @property
@@ -689,7 +693,6 @@ class Project(CDSDeposit):
                 video['_access']['update'] = deepcopy(project_access)
             else:
                 video['_access'] = dict(update=deepcopy(project_access))
-
         if video['_deposit'].get('created_by') != project_created_by:
             changed = True
             # sync owner
