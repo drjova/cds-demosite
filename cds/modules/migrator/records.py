@@ -38,6 +38,7 @@ import arrow
 from cds_dojson.marc21 import marc21
 from cds_dojson.marc21.utils import create_record
 from cds_sorenson.api import get_closest_aspect_ratio
+from celery.utils.log import get_task_logger
 from flask import current_app
 from invenio_accounts.models import User
 from invenio_db import db
@@ -49,6 +50,7 @@ from invenio_files_rest.models import (Bucket, BucketTag, FileInstance,
 from invenio_files_rest.tasks import remove_file_data
 from invenio_jsonschemas import current_jsonschemas
 from invenio_migrator.records import RecordDump, RecordDumpLoader
+from invenio_migrator.tasks.records import import_record
 from invenio_pidstore.models import PersistentIdentifier, RecordIdentifier
 from invenio_records.models import RecordMetadata
 from invenio_records_files.api import Record
@@ -68,7 +70,7 @@ from .tasks import TranscodeVideoTaskQuiet
 from .utils import (cern_movie_to_video_pid_fetcher, process_fireroles,
                     update_access)
 
-logger = logging.getLogger('cds-record-migration')
+logger = get_task_logger(import_record.__name__)
 
 
 class CDSRecordDump(RecordDump):
@@ -212,6 +214,7 @@ class CDSRecordDumpLoader(RecordDumpLoader):
         """Clean a record with all connected objects."""
         logging.debug('Clean record {0}'.format(dump.recid))
         record = dump.resolver.resolve(dump.data['recid'])[1]
+        db.session.expunge(record.model)
         # clean deposit
         cls.clean_deposit(record=record, delete_files=delete_files)
         # clean record
@@ -246,24 +249,36 @@ class CDSRecordDumpLoader(RecordDumpLoader):
         logging.debug('Clean deposit for record {0}'.format(record.id))
         deposit = cls._get_deposit(record=record)
         if deposit:
-            cls.clean_buckets(record=deposit, delete_files=delete_files)
+            db.session.expunge(deposit.model)
+            logging.debug('Clean deposit {0}'.format(deposit.id))
+            cls.clean_bucket(deposit, delete_files)
             cls.clean_pids(deposit)
             db.session.delete(deposit.model)
 
     @classmethod
     def clean_record(cls, dump, record, delete_files):
         """Clean record."""
-        cls.clean_buckets(record, delete_files=delete_files)
+        logging.debug('Clean record {0}'.format(record.id))
+        cls.clean_bucket(record, delete_files)
         cls.clean_pids(record)
         RecordIdentifier.query.filter_by(recid=dump.recid).delete()
         db.session.delete(record.model)
 
     @classmethod
-    def clean_files(cls, bucket, delete_files):
-        """Clean files."""
+    def clean_bucket(cls, record, delete_files):
+        """Clean buckets."""
+        record_bucket = RecordsBuckets.query.filter_by(
+            record_id=record.id).one_or_none()
+        if not record_bucket:
+            return
+        bucket = record_bucket.bucket
+        db.session.expunge(bucket)
+        db.session.expunge(record_bucket)
+        logging.debug('Clean files for bucket {0}'.format(bucket))
         for obj in ObjectVersion.query.filter_by(bucket=bucket).all():
             objs_to_file = ObjectVersion.query.filter_by(
                 file_id=obj.file_id).count()
+            logging.debug('Deleting {0}'.format(obj))
             obj.file.writable = True
             db.session.delete(obj)
             if objs_to_file == 1:
@@ -272,19 +287,11 @@ class CDSRecordDumpLoader(RecordDumpLoader):
                 else:
                     obj.file.delete()
 
-    @classmethod
-    def clean_buckets(cls, record, delete_files):
-        """Clean buckets."""
-        logging.debug('Clean bucket for record {0}'.format(record.id))
-        for rb in RecordsBuckets.query.filter_by(record_id=record.id).all():
-            bucket = rb.bucket
-            logging.debug('Clean files for bucket {0}'.format(bucket.id))
-            cls.clean_files(bucket=bucket, delete_files=delete_files)
-            logging.debug('Clean tags for bucket {0}'.format(bucket.id))
-            for tag in BucketTag.query.filter_by(bucket=bucket).all():
-                db.session.delete(tag)
-            db.session.delete(rb)
-            db.session.delete(bucket)
+        logging.debug('Clean tags for bucket {0}'.format(bucket))
+        for tag in BucketTag.query.filter_by(bucket=bucket).all():
+            db.session.delete(tag)
+        db.session.delete(bucket)
+        db.session.delete(record_bucket)
 
     @classmethod
     def _get_pids(cls, record):
