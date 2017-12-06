@@ -44,6 +44,11 @@ class CDSPreviewRecordFile(PreviewFile):
     """Preview record files implementation."""
 
     @property
+    def subformats(self):
+        """Get the subformats."""
+        return self.file.dumps().get('subformat', [])
+
+    @property
     def uri(self):
         """Get file download link."""
         return url_for(
@@ -68,10 +73,7 @@ class CDSPreviewRecordFile(PreviewFile):
                     for f in self.record['_files']
                     if f['context_type'] == 'poster'][0]
         except IndexError:
-            return url_for(
-                'invenio_records_ui.{0}_files'.format(self.pid.pid_type),
-                pid_value=self.pid.pid_value,
-                filename='frame-1.jpg')
+            return self.file.dumps().get('frame', [])[0]['links']['self']
 
     @property
     def record_uri(self):
