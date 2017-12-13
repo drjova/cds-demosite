@@ -662,9 +662,6 @@ CERN_APP_CREDENTIALS = dict(
     consumer_secret='CHANGE_ME',
 )
 
-# Set the template
-OAUTH2SERVER_SETTINGS_TEMPLATE = 'cds_theme/settings.html'
-
 ###############################################################################
 # Theme
 ###############################################################################
@@ -677,6 +674,10 @@ THEME_LOGO = False
 BASE_TEMPLATE = 'cds_theme/page.html'
 # Header template for entire site.
 HEADER_TEMPLATE = 'cds_theme/header.html'
+# Settings template
+SETTINGS_TEMPLATE = "invenio_theme/page_settings.html"
+# Settings template for oauth2server
+OAUTH2SERVER_SETTINGS_TEMPLATE = 'cds_theme/settings.html'
 # Endpoint for breadcrumb root.
 THEME_BREADCRUMB_ROOT_ENDPOINT = 'cds_home.index'
 # Cover template
